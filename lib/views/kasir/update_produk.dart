@@ -300,7 +300,7 @@ class _UpdateProdukScreenState extends State<UpdateProdukScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Update Produk',
+          'Edit Produk',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
