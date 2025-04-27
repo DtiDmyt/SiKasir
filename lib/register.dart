@@ -45,17 +45,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,      
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Color(0xFF133E87)),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Daftar Akun',
           style: TextStyle(
-            color: Color(0xFF133E87),
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF133E87),
         elevation: 0,
       ),
       body: Padding(
@@ -195,49 +195,120 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final confirmPassword = _confirmPasswordController.text.trim();
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      _showAlert("Error", "Harap diisi terlebih dahulu.");
+      _showCustomAlert("Error", "Harap diisi terlebih dahulu.");
       return;
     }
 
     if (password != confirmPassword) {
-      _showAlert("Error", "Password dan Konfirmasi Password tidak cocok.");
+      _showCustomAlert("Error", "Password dan Konfirmasi Password tidak cocok.");
       return;
     }
 
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      _showAlert("Berhasil", "Akun berhasil dibuat.", navigateToLogin: true);
+      _showCustomAlert("Berhasil", "Akun berhasil dibuat.", navigateToLogin: true);
     } on FirebaseAuthException catch (e) {
-      _showAlert("Error", e.message ?? "Terjadi kesalahan.");
+      _showCustomAlert("Error", e.message ?? "Terjadi kesalahan.");
     }
   }
 
-  void _showAlert(String title, String message,
+  // Alert dialog yang diperbaiki dengan perpaduan warna #133E87 dan putih
+  void _showCustomAlert(String title, String message,
       {bool navigateToLogin = false}) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              if (navigateToLogin) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: customBlue,
-            ),
-            child: Text("OK"),
-          )
-        ],
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10.0,
+                offset: Offset(0.0, 10.0),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: customBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  title.toLowerCase() == "berhasil" ? Icons.check_circle : Icons.info_outline,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: customBlue,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (navigateToLogin) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: customBlue,
+                  minimumSize: const Size(120, 45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  "OK",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  // Backward compatibility dengan metode lama
+  void _showAlert(String title, String message,
+      {bool navigateToLogin = false}) {
+    _showCustomAlert(title, message, navigateToLogin: navigateToLogin);
   }
 }
