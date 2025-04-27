@@ -249,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  title.toLowerCase() == "berhasil" ? Icons.check_circle : Icons.info_outline,
+                  title.toLowerCase() == "berhasil" ? Icons.check_circle : Icons.warning,
                   color: Colors.white,
                   size: 36,
                 ),

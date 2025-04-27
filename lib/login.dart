@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.info_outline,
+                  Icons.warning,
                   color: Colors.white,
                   size: 36,
                 ),
