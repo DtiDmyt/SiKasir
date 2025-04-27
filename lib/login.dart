@@ -38,12 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showAlert("Error", "Harap isi email dan kata sandi.");
+      _showCustomAlert("Error", "Harap isi email dan kata sandi.");
       return;
     }
 
     if (!_isValidEmail(email)) {
-      _showAlert("Error", "Format email tidak valid.");
+      _showCustomAlert("Error", "Format email tidak valid.");
       return;
     }
 
@@ -71,9 +71,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on FirebaseAuthException catch (e) {
       String errorMessage = _getErrorMessage(e);
-      _showAlert("Login Gagal", errorMessage);
+      _showCustomAlert("Login Gagal", errorMessage);
     } catch (e) {
-      _showAlert("Error", "Terjadi kesalahan tidak terduga.");
+      _showCustomAlert("Error", "Terjadi kesalahan tidak terduga.");
     } finally {
       setState(() {
         _isLoading = false;
@@ -100,32 +100,106 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
 
     if (email.isEmpty || !_isValidEmail(email)) {
-      _showAlert("Error", "Masukkan email yang valid untuk reset kata sandi.");
+      _showCustomAlert("Error", "Masukkan email yang valid untuk reset kata sandi.");
       return;
     }
 
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      _showAlert("Berhasil", "Email reset kata sandi telah dikirim.");
+      _showCustomAlert("Berhasil", "Email reset kata sandi telah dikirim.");
     } catch (e) {
-      _showAlert("Error", "Gagal mengirim email reset kata sandi.");
+      _showCustomAlert("Error", "Gagal mengirim email reset kata sandi.");
     }
   }
 
-  void _showAlert(String title, String message) {
+  // Alert dialog yang diperbaiki dengan perpaduan warna #133E87 dan putih
+  void _showCustomAlert(String title, String message) {
+    const Color customBlue = Color(0xFF133E87);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10.0,
+                offset: Offset(0.0, 10.0),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: const BoxDecoration(
+                  color: customBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: customBlue,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: customBlue,
+                  minimumSize: const Size(120, 45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  "OK",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  // Penggantian metode _showAlert yang lama dengan yang baru
+  void _showAlert(String title, String message) {
+    _showCustomAlert(title, message);
   }
 
   @override
