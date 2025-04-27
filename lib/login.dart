@@ -100,7 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
 
     if (email.isEmpty || !_isValidEmail(email)) {
-      _showCustomAlert("Error", "Masukkan email yang valid untuk reset kata sandi.");
+      _showCustomAlert(
+          "Error", "Masukkan email yang valid untuk reset kata sandi.");
       return;
     }
 
@@ -115,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Alert dialog yang diperbaiki dengan perpaduan warna #133E87 dan putih
   void _showCustomAlert(String title, String message) {
     const Color customBlue = Color(0xFF133E87);
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -211,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final double paddingVertical = screenSize.height * 0.02;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Set background warna putih secara eksplisit
+      backgroundColor:
+          Colors.white, // Set background warna putih secara eksplisit
       body: Container(
         color: Colors.white, // Warna container juga dibuat putih
         child: SingleChildScrollView(
@@ -251,7 +253,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: const Icon(Icons.email),
                   border: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: _emailFocusNode.hasFocus ? customBlue : Colors.grey,
+                      color:
+                          _emailFocusNode.hasFocus ? customBlue : Colors.grey,
                     ),
                   ),
                   focusedBorder: const OutlineInputBorder(
@@ -287,8 +290,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color:
-                          _passwordFocusNode.hasFocus ? customBlue : Colors.grey,
+                      color: _passwordFocusNode.hasFocus
+                          ? customBlue
+                          : Colors.grey,
                     ),
                   ),
                   focusedBorder: const OutlineInputBorder(

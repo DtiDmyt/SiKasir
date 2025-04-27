@@ -279,7 +279,7 @@ class _CreateProdukScreenState extends State<CreateProdukScreen> {
         SnackBar(content: Text('Error: Gagal menyimpan produk')),
       );
       print('Error saving product: $e');
-      
+
       // Stop the loading indicator
       setState(() {
         _isLoading = false;

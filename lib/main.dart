@@ -237,7 +237,8 @@ class _SplashScreenState extends State<SplashScreen>
                               // Tagline - Now centered with additional constraints
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
                                 child: const Text(
                                   'Kelola Bisnis Jadi Mudah? Si Kasir Jawabannya!',
                                   style: TextStyle(
@@ -270,7 +271,8 @@ class _SplashScreenState extends State<SplashScreen>
                                           height: 4,
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(2),
+                                            borderRadius:
+                                                BorderRadius.circular(2),
                                           ),
                                         ),
                                       );

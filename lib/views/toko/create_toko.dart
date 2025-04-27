@@ -95,7 +95,8 @@ class _TambahTokoScreenState extends State<TambahTokoScreen> {
                     _getImage(ImageSource.camera, isProfile: isProfile);
                   },
                 ),
-                if ((isProfile && _profileImage != null) || (!isProfile && _qrisImage != null))
+                if ((isProfile && _profileImage != null) ||
+                    (!isProfile && _qrisImage != null))
                   ListTile(
                     leading: Icon(Icons.delete),
                     title: Text(isProfile ? 'Hapus Foto Profil' : 'Hapus QRIS'),
@@ -151,7 +152,7 @@ class _TambahTokoScreenState extends State<TambahTokoScreen> {
           resourceType: CloudinaryResourceType.Image,
         ),
       );
-      
+
       return response.secureUrl;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,10 +184,11 @@ class _TambahTokoScreenState extends State<TambahTokoScreen> {
         // Upload images to Cloudinary if they exist
         if (_profileImage != null) {
           // Upload ke folder profile_images
-          _profileImageUrl = await _uploadToCloudinary(_profileImage!, 'profile_images');
+          _profileImageUrl =
+              await _uploadToCloudinary(_profileImage!, 'profile_images');
           print('Profile image URL: $_profileImageUrl');
         }
-        
+
         if (_qrisImage != null) {
           // Upload ke folder qris_images
           _qrisImageUrl = await _uploadToCloudinary(_qrisImage!, 'qris_images');
@@ -198,8 +200,10 @@ class _TambahTokoScreenState extends State<TambahTokoScreen> {
           'nama_toko': _namaTokoController.text,
           'phone': _phoneController.text,
           'email': _emailController.text,
-          'profile_image': _profileImageUrl ?? '', // Menyimpan URL lengkap dari Cloudinary
-          'qris_image': _qrisImageUrl ?? '', // Menyimpan URL lengkap dari Cloudinary
+          'profile_image':
+              _profileImageUrl ?? '', // Menyimpan URL lengkap dari Cloudinary
+          'qris_image':
+              _qrisImageUrl ?? '', // Menyimpan URL lengkap dari Cloudinary
           'createdAt': FieldValue.serverTimestamp(),
         };
 
@@ -226,7 +230,7 @@ class _TambahTokoScreenState extends State<TambahTokoScreen> {
       } catch (error) {
         // Close loading dialog
         Navigator.pop(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menyimpan data: $error'),

@@ -42,7 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
-      backgroundColor: Colors.white,      
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.white),
@@ -200,14 +200,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (password != confirmPassword) {
-      _showCustomAlert("Error", "Password dan Konfirmasi Password tidak cocok.");
+      _showCustomAlert(
+          "Error", "Password dan Konfirmasi Password tidak cocok.");
       return;
     }
 
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      _showCustomAlert("Berhasil", "Akun berhasil dibuat.", navigateToLogin: true);
+      _showCustomAlert("Berhasil", "Akun berhasil dibuat.",
+          navigateToLogin: true);
     } on FirebaseAuthException catch (e) {
       _showCustomAlert("Error", e.message ?? "Terjadi kesalahan.");
     }
@@ -249,7 +251,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  title.toLowerCase() == "berhasil" ? Icons.check_circle : Icons.warning,
+                  title.toLowerCase() == "berhasil"
+                      ? Icons.check_circle
+                      : Icons.warning,
                   color: Colors.white,
                   size: 36,
                 ),

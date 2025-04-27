@@ -85,16 +85,16 @@ class _StrukScreenState extends State<StrukScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF133E87),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Struk Pembelian',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+        automaticallyImplyLeading: false,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 20.0), // geser dikit ke kanan
+          child: Text(
+            'Struk Pembelian',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),

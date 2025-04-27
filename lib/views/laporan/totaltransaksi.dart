@@ -54,11 +54,11 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
       transaksiData = [];
       pengeluaranData = [];
     });
-    
+
     if (userEmail != null) {
       await _calculateTransaksi();
       await _calculatePengeluaran();
-      
+
       setState(() {
         isLoading = false;
       });
@@ -73,7 +73,7 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
 
     DateTime startDate = DateTime(selectedYear, 1, 1);
     DateTime endDate = DateTime(selectedYear, 12, 31, 23, 59, 59);
-    
+
     Timestamp startTimestamp = Timestamp.fromDate(startDate);
     Timestamp endTimestamp = Timestamp.fromDate(endDate);
 
@@ -93,8 +93,9 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
 
         transaksiData.add({
           'id': doc.id,
-          'tanggal': data['timestamp'] != null 
-              ? DateFormat('dd/MM/yyyy').format((data['timestamp'] as Timestamp).toDate()) 
+          'tanggal': data['timestamp'] != null
+              ? DateFormat('dd/MM/yyyy')
+                  .format((data['timestamp'] as Timestamp).toDate())
               : '-',
           'pelanggan': data['customerName']?.toString() ?? '-',
           'total': totalAmount,
@@ -124,7 +125,7 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
 
     DateTime startDate = DateTime(selectedYear, 1, 1);
     DateTime endDate = DateTime(selectedYear, 12, 31, 23, 59, 59);
-    
+
     Timestamp startTimestamp = Timestamp.fromDate(startDate);
     Timestamp endTimestamp = Timestamp.fromDate(endDate);
 
@@ -144,19 +145,20 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
         double hargaBeli = (data['hargaBeli'] ?? 0).toDouble();
         int stok = (data['stok'] ?? 0).toInt();
         double total = hargaBeli * stok;
-        
+
         pengeluaranData.add({
           'id': doc.id,
           'nama': data['namaProduk']?.toString() ?? '-',
-          'tanggal': data['updatedAt'] != null 
-              ? DateFormat('dd/MM/yyyy').format((data['updatedAt'] as Timestamp).toDate()) 
+          'tanggal': data['updatedAt'] != null
+              ? DateFormat('dd/MM/yyyy')
+                  .format((data['updatedAt'] as Timestamp).toDate())
               : '-',
           'hargaBeli': hargaBeli,
           'stok': stok,
           'total': total,
           'jenis': 'Produk',
         });
-        
+
         pengeluaran += total;
       }
 
@@ -170,28 +172,29 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
 
       for (var doc in transaksiSnapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        
+
         if (data.containsKey('products') && data['products'] is List) {
           List<dynamic> products = data['products'];
-          
+
           for (var product in products) {
             if (product is Map<String, dynamic>) {
               double hargaBeli = (product['price'] ?? 0).toDouble();
               int quantity = (product['quantity'] ?? 0).toInt();
               double total = hargaBeli * quantity;
-              
+
               pengeluaranData.add({
                 'id': doc.id,
                 'nama': product['name']?.toString() ?? '-',
-                'tanggal': data['timestamp'] != null 
-                    ? DateFormat('dd/MM/yyyy').format((data['timestamp'] as Timestamp).toDate()) 
+                'tanggal': data['timestamp'] != null
+                    ? DateFormat('dd/MM/yyyy')
+                        .format((data['timestamp'] as Timestamp).toDate())
                     : '-',
                 'hargaBeli': hargaBeli,
                 'stok': quantity,
                 'total': total,
                 'jenis': 'Transaksi',
               });
-              
+
               pengeluaran += total;
             }
           }
@@ -219,28 +222,28 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
       setState(() {
         isExporting = true;
       });
-      
+
       final excel = Excel.createExcel();
-      
+
       if (excel.sheets.containsKey('Sheet1')) {
         excel.delete('Sheet1');
       }
 
       // Sheet Ringkasan
       final sheetSummary = excel['Ringkasan'];
-      
+
       sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0))
         ..value = TextCellValue('LAPORAN KEUANGAN TAHUN $selectedYear')
         ..cellStyle = CellStyle(bold: true);
-      
+
       sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 2))
         ..value = TextCellValue('Kategori')
         ..cellStyle = CellStyle(bold: true);
-      
+
       sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 2))
         ..value = TextCellValue('Jumlah')
         ..cellStyle = CellStyle(bold: true);
-      
+
       double _toDouble(dynamic value) {
         if (value == null) return 0.0;
         if (value is int) return value.toDouble();
@@ -248,45 +251,86 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
         return double.tryParse(value.toString()) ?? 0.0;
       }
 
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 3)).value = TextCellValue('Transaksi Lunas');
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 3)).value = DoubleCellValue(_toDouble(totalLunas));
-      
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 4)).value = TextCellValue('Transaksi Hutang');
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 4)).value = DoubleCellValue(_toDouble(totalHutang));
-      
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 5)).value = TextCellValue('Total Pendapatan');
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 5)).value = DoubleCellValue(_toDouble(totalPendapatan));
-      
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 6)).value = TextCellValue('Total Pengeluaran');
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 6)).value = DoubleCellValue(_toDouble(totalPengeluaran));
-      
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 7)).value = TextCellValue('Laba Bersih');
-      sheetSummary.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 7)).value = DoubleCellValue(_toDouble(totalPendapatan - totalPengeluaran));
-      
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 3))
+          .value = TextCellValue('Transaksi Lunas');
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 3))
+          .value = DoubleCellValue(_toDouble(totalLunas));
+
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 4))
+          .value = TextCellValue('Transaksi Hutang');
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 4))
+          .value = DoubleCellValue(_toDouble(totalHutang));
+
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 5))
+          .value = TextCellValue('Total Pendapatan');
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 5))
+          .value = DoubleCellValue(_toDouble(totalPendapatan));
+
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 6))
+          .value = TextCellValue('Total Pengeluaran');
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 6))
+          .value = DoubleCellValue(_toDouble(totalPengeluaran));
+
+      sheetSummary
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 7))
+          .value = TextCellValue('Laba Bersih');
+      sheetSummary
+              .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 7))
+              .value =
+          DoubleCellValue(_toDouble(totalPendapatan - totalPengeluaran));
+
       sheetSummary.setColumnWidth(0, 20);
       sheetSummary.setColumnWidth(1, 15);
 
       // Sheet Transaksi
       if (transaksiData.isNotEmpty) {
         final sheetTransaksi = excel['Transaksi'];
-        
-        final headers = ['No', 'ID Transaksi', 'Tanggal', 'Nama Pelanggan', 'Total', 'Status'];
+
+        final headers = [
+          'No',
+          'ID Transaksi',
+          'Tanggal',
+          'Nama Pelanggan',
+          'Total',
+          'Status'
+        ];
         for (int i = 0; i < headers.length; i++) {
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
             ..value = TextCellValue(headers[i])
             ..cellStyle = CellStyle(bold: true);
         }
-        
+
         for (int i = 0; i < transaksiData.length; i++) {
           final data = transaksiData[i];
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = IntCellValue(i + 1);
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(data['id']?.toString() ?? '-');
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(data['tanggal']?.toString() ?? '-');
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(data['pelanggan']?.toString() ?? '-');
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = DoubleCellValue(_toDouble(data['total']));
-          sheetTransaksi.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = TextCellValue(data['status']?.toString() ?? '-');
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+              .value = IntCellValue(i + 1);
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+              .value = TextCellValue(data['id']?.toString() ?? '-');
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+              .value = TextCellValue(data['tanggal']?.toString() ?? '-');
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+              .value = TextCellValue(data['pelanggan']?.toString() ?? '-');
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+              .value = DoubleCellValue(_toDouble(data['total']));
+          sheetTransaksi
+              .cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1))
+              .value = TextCellValue(data['status']?.toString() ?? '-');
         }
-        
+
         sheetTransaksi.setColumnWidth(0, 5);
         sheetTransaksi.setColumnWidth(1, 15);
         sheetTransaksi.setColumnWidth(2, 12);
@@ -294,30 +338,56 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
         sheetTransaksi.setColumnWidth(4, 15);
         sheetTransaksi.setColumnWidth(5, 12);
       }
-      
+
       // Sheet Pengeluaran
       if (pengeluaranData.isNotEmpty) {
         final sheetPengeluaran = excel['Pengeluaran'];
-        
-        final headers = ['No', 'ID', 'Nama Item', 'Tanggal', 'Harga Beli', 'Jumlah', 'Total', 'Jenis'];
+
+        final headers = [
+          'No',
+          'ID',
+          'Nama Item',
+          'Tanggal',
+          'Harga Beli',
+          'Jumlah',
+          'Total',
+          'Jenis'
+        ];
         for (int i = 0; i < headers.length; i++) {
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
             ..value = TextCellValue(headers[i])
             ..cellStyle = CellStyle(bold: true);
         }
-        
+
         for (int i = 0; i < pengeluaranData.length; i++) {
           final data = pengeluaranData[i];
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = IntCellValue(i + 1);
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(data['id']?.toString() ?? '-');
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(data['nama']?.toString() ?? '-');
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(data['tanggal']?.toString() ?? '-');
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = DoubleCellValue(_toDouble(data['hargaBeli']));
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1)).value = IntCellValue((data['stok'] as int?) ?? 0);
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1)).value = DoubleCellValue(_toDouble(data['total']));
-          sheetPengeluaran.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1)).value = TextCellValue(data['jenis']?.toString() ?? '-');
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+              .value = IntCellValue(i + 1);
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+              .value = TextCellValue(data['id']?.toString() ?? '-');
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+              .value = TextCellValue(data['nama']?.toString() ?? '-');
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+              .value = TextCellValue(data['tanggal']?.toString() ?? '-');
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+              .value = DoubleCellValue(_toDouble(data['hargaBeli']));
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1))
+              .value = IntCellValue((data['stok'] as int?) ?? 0);
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1))
+              .value = DoubleCellValue(_toDouble(data['total']));
+          sheetPengeluaran
+              .cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: i + 1))
+              .value = TextCellValue(data['jenis']?.toString() ?? '-');
         }
-        
+
         sheetPengeluaran.setColumnWidth(0, 5);
         sheetPengeluaran.setColumnWidth(1, 15);
         sheetPengeluaran.setColumnWidth(2, 25);
@@ -327,15 +397,16 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
         sheetPengeluaran.setColumnWidth(6, 15);
         sheetPengeluaran.setColumnWidth(7, 12);
       }
-      
+
       await _saveToLocalStorage(excel);
-      
+
       setState(() {
         isExporting = false;
       });
     } catch (e) {
       print("Error exporting to Excel: $e");
-      _showErrorDialog("Terjadi kesalahan saat mengekspor data ke Excel: ${e.toString()}");
+      _showErrorDialog(
+          "Terjadi kesalahan saat mengekspor data ke Excel: ${e.toString()}");
       setState(() {
         isExporting = false;
       });
@@ -343,56 +414,56 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
   }
 
   Future<void> _saveToLocalStorage(Excel excel) async {
-  try {
-    // Get downloads directory (or documents directory if downloads is not available)
-    Directory? directory;
     try {
-      if (Platform.isAndroid) {
-        directory = await getExternalStorageDirectory();
-        String newPath = '';
-        List<String> paths = directory!.path.split('/');
-        for (int x = 1; x < paths.length; x++) {
-          String folder = paths[x];
-          if (folder != 'Android') {
-            newPath += '/$folder';
-          } else {
-            break;
+      // Get downloads directory (or documents directory if downloads is not available)
+      Directory? directory;
+      try {
+        if (Platform.isAndroid) {
+          directory = await getExternalStorageDirectory();
+          String newPath = '';
+          List<String> paths = directory!.path.split('/');
+          for (int x = 1; x < paths.length; x++) {
+            String folder = paths[x];
+            if (folder != 'Android') {
+              newPath += '/$folder';
+            } else {
+              break;
+            }
           }
+          newPath = '$newPath/Download';
+          directory = Directory(newPath);
+        } else if (Platform.isIOS) {
+          directory = await getApplicationDocumentsDirectory();
         }
-        newPath = '$newPath/Download';
-        directory = Directory(newPath);
-      } else if (Platform.isIOS) {
+
+        if (!await directory!.exists()) {
+          directory = await getApplicationDocumentsDirectory();
+        }
+      } catch (e) {
         directory = await getApplicationDocumentsDirectory();
       }
-      
-      if (!await directory!.exists()) {
-        directory = await getApplicationDocumentsDirectory();
+
+      // ignore: unused_local_variable
+      final now = DateTime.now();
+      final fileName = 'Laporan_Keuangan_$selectedYear.xlsx';
+      final filePath = '${directory.path}/$fileName';
+
+      final excelBytes = excel.encode();
+      if (excelBytes == null) {
+        throw Exception('Gagal mengencode Excel');
       }
+
+      final file = File(filePath);
+      await file.writeAsBytes(excelBytes, flush: true);
+
+      _showSuccessDialog('Laporan berhasil disimpan', filePath);
+    } on MissingPluginException catch (e) {
+      _showErrorDialog(
+          'Plugin tidak tersedia: ${e.message}\nPastikan aplikasi sudah di-rebuild');
     } catch (e) {
-      directory = await getApplicationDocumentsDirectory();
+      _showErrorDialog('Gagal menyimpan file: ${e.toString()}');
     }
-
-    // ignore: unused_local_variable
-    final now = DateTime.now();
-    final fileName = 'Laporan_Keuangan_$selectedYear.xlsx';
-    final filePath = '${directory.path}/$fileName';
-    
-    final excelBytes = excel.encode();
-    if (excelBytes == null) {
-      throw Exception('Gagal mengencode Excel');
-    }
-
-    final file = File(filePath);
-    await file.writeAsBytes(excelBytes, flush: true);
-    
-    _showSuccessDialog('Laporan berhasil disimpan', filePath);
-    
-  } on MissingPluginException catch (e) {
-    _showErrorDialog('Plugin tidak tersedia: ${e.message}\nPastikan aplikasi sudah di-rebuild');
-  } catch (e) {
-    _showErrorDialog('Gagal menyimpan file: ${e.toString()}');
   }
-}
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -411,34 +482,34 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
   }
 
   void _showSuccessDialog(String message, String filePath) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Sukses'),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('OK'),
-        ),
-        TextButton(
-          onPressed: () async {
-            Navigator.pop(context);
-            try {
-              final result = await OpenFile.open(filePath);
-              if (result.type != ResultType.done) {
-                _showErrorDialog('Gagal membuka file: ${result.message}');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sukses'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final result = await OpenFile.open(filePath);
+                if (result.type != ResultType.done) {
+                  _showErrorDialog('Gagal membuka file: ${result.message}');
+                }
+              } catch (e) {
+                _showErrorDialog('Gagal membuka file: ${e.toString()}');
               }
-            } catch (e) {
-              _showErrorDialog('Gagal membuka file: ${e.toString()}');
-            }
-          },
-          child: const Text('Buka File'),
-        ),
-      ],
-    ),
-  );
-}
+            },
+            child: const Text('Buka File'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildExportButton() {
     return GestureDetector(
@@ -453,22 +524,24 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Center(
             child: isExporting
-              ? SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF133E87),
-                    strokeWidth: 2,
+                ? SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF133E87),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Cetak Excel',
+                    style: TextStyle(
+                      color: (isLoading || isExporting)
+                          ? Colors.grey[600]
+                          : Color(0xFF133E87),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                   ),
-                )
-              : Text(
-                  'Cetak Excel',
-                  style: TextStyle(
-                    color: (isLoading || isExporting) ? Colors.grey[600] : Color(0xFF133E87),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
           ),
         ),
       ),
@@ -551,7 +624,8 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
                     dropdownColor: const Color(0xFF133E87),
                     style: const TextStyle(color: Colors.white),
                     underline: Container(),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    icon:
+                        const Icon(Icons.arrow_drop_down, color: Colors.white),
                     items: List.generate(
                       endYear - startYear + 1,
                       (index) {
@@ -577,24 +651,31 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
             ),
             SizedBox(height: isSmallScreen ? 18 : 24),
             Expanded(
-              child: isLoading 
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF133E87),
+              child: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF133E87),
+                      ),
+                    )
+                  : GridView.count(
+                      crossAxisCount: isSmallScreen ? 1 : 2,
+                      crossAxisSpacing: isSmallScreen ? 12 : 16,
+                      mainAxisSpacing: isSmallScreen ? 12 : 16,
+                      childAspectRatio: isSmallScreen ? 1.2 : 1.1,
+                      children: [
+                        buildCard(
+                            context,
+                            'Transaksi Lunas',
+                            formatPrice(totalLunas),
+                            Icons.check_circle_outline),
+                        buildCard(context, 'Transaksi Hutang',
+                            formatPrice(totalHutang), Icons.cancel_outlined),
+                        buildCard(context, 'Pendapatan',
+                            formatPrice(totalPendapatan), Icons.trending_up),
+                        buildCard(context, 'Pengeluaran',
+                            formatPrice(totalPengeluaran), Icons.trending_down),
+                      ],
                     ),
-                  )
-                : GridView.count(
-                    crossAxisCount: isSmallScreen ? 1 : 2,
-                    crossAxisSpacing: isSmallScreen ? 12 : 16,
-                    mainAxisSpacing: isSmallScreen ? 12 : 16,
-                    childAspectRatio: isSmallScreen ? 1.2 : 1.1,
-                    children: [
-                      buildCard(context, 'Transaksi Lunas', formatPrice(totalLunas), Icons.check_circle_outline),
-                      buildCard(context, 'Transaksi Hutang', formatPrice(totalHutang), Icons.cancel_outlined),
-                      buildCard(context, 'Pendapatan', formatPrice(totalPendapatan), Icons.trending_up),
-                      buildCard(context, 'Pengeluaran', formatPrice(totalPengeluaran), Icons.trending_down),
-                    ],
-                  ),
             ),
           ],
         ),
@@ -602,7 +683,8 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
     );
   }
 
-  Widget buildCard(BuildContext context, String title, String value, IconData icon) {
+  Widget buildCard(
+      BuildContext context, String title, String value, IconData icon) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
 

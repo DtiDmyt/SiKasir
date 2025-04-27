@@ -33,10 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Daftar gambar untuk carousel beserta URL target
   final List<Map<String, String>> banners = [
-    {
-      'image': 'assets/banner.jpg',
-      'url': 'https://youtu.be/bJ04Q6yiwsA'
-    },
+    {'image': 'assets/banner.jpg', 'url': 'https://youtu.be/bJ04Q6yiwsA'},
     {
       'image': 'assets/banner1.jpg',
       'url': 'https://www.instagram.com/p/DI3h6oVShOj/?igsh=NjNxeTRtY3hvYjE0'
@@ -116,9 +113,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           await tokoRef.where('email', isEqualTo: emailUser).get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        final profileData = querySnapshot.docs.first.data() ;
+        final profileData = querySnapshot.docs.first.data();
         setState(() {
-          profileImageUrl = profileData['profile_image'] ?? ''; 
+          profileImageUrl = profileData['profile_image'] ?? '';
           namaToko = profileData['nama_toko'] ?? 'Toko Saya';
           isLoadingProfile = false;
         });
@@ -153,7 +150,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Reuse the existing help center function but call the generic one
   Future<void> _launchHelpCenter() async {
-    await _launchURL('https://www.instagram.com/sikasir_app?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==');
+    await _launchURL(
+        'https://www.instagram.com/sikasir_app?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==');
   }
 
   Future<void> _navigateToToko(BuildContext context) async {
@@ -384,7 +382,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: InkWell(
                                     splashColor: Colors.white.withOpacity(0.3),
                                     highlightColor: Colors.transparent,
-                                    onTap: () => _launchURL(banners[index]['url']!),
+                                    onTap: () =>
+                                        _launchURL(banners[index]['url']!),
                                   ),
                                 ),
                               ),

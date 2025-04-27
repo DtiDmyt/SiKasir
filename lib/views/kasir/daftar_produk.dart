@@ -155,29 +155,11 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
       await _firestore.collection('produk').doc(productId).delete();
       await _loadProducts();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Produk berhasil dihapus'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Produk berhasil dihapus')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal menghapus produk: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ),
+        SnackBar(content: Text('Gagal menghapus produk: $e')),
       );
     }
   }
@@ -451,15 +433,8 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.15),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,7 +444,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                 children: [
                   ClipRRect(
                     borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(12)),
+                        const BorderRadius.vertical(top: Radius.circular(8)),
                     child: Image.network(
                       imageUrl,
                       height: double.infinity,
@@ -494,13 +469,6 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                             ? const Color.fromARGB(255, 238, 198, 195)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 3,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
                       ),
                       child: Text(
                         'Stok: ${product.stock}',
@@ -518,21 +486,21 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                     top: 8,
                     right: 8,
                     child: Container(
-                      height: 36,
-                      width: 36,
+                      height: 32,
+                      width: 32,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.grey.withOpacity(0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Center(
-                        child: _buildProductMenu(product),
+                        child: _buildImprovedProductMenu(product),
                       ),
                     ),
                   ),
@@ -540,7 +508,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -577,13 +545,13 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                         style: const TextStyle(
                           color: Color(0xFF133E87),
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 10,
                         ),
                       ),
                       const SizedBox(height: 8),
                       if (product.quantity > 0)
-                        SizedBox(
-                          height: 36,
+                        Container(
+                          height: 30,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -601,7 +569,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                               Text(
                                 '${product.quantity}',
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -621,7 +589,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                         )
                       else if (product.stock == 0)
                         Container(
-                          height: 36,
+                          height: 32,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
                             borderRadius: BorderRadius.circular(8),
@@ -638,7 +606,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                         )
                       else
                         SizedBox(
-                          height: 36,
+                          height: 32,
                           child: ElevatedButton(
                             onPressed: () {
                               setState(() {
@@ -650,19 +618,10 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
                               backgroundColor: const Color(0xFF133E87),
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
                               padding: EdgeInsets.zero,
-                              minimumSize: Size(screenWidth * 0.3, 36),
+                              minimumSize: Size(screenWidth * 0.3, 32),
                             ),
-                            child: const Text(
-                              'Tambah',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: const Text('Tambah'),
                           ),
                         ),
                     ],
@@ -676,7 +635,8 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
     );
   }
 
-  Widget _buildProductMenu(Product product) {
+  // Improved product menu with better styling
+  Widget _buildImprovedProductMenu(Product product) {
     return PopupMenuButton<String>(
       onSelected: (value) async {
         if (value == 'edit') {
@@ -691,37 +651,38 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
           await _loadProducts();
         } else if (value == 'delete') {
           // Show improved delete confirmation dialog
-          showDeleteConfirmationDialog(product);
+          showImprovedDeleteConfirmationDialog(product);
         }
       },
       icon: const Icon(
         Icons.more_vert,
-        size: 20,
+        size: 18,
         color: Color(0xFF133E87),
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       elevation: 4,
-      offset: const Offset(0, 10),
+      offset: const Offset(0, 8),
       itemBuilder: (context) => [
         PopupMenuItem(
           value: 'edit',
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.edit_outlined,
                   color: Colors.blue,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               const Text(
                 'Edit',
                 style: TextStyle(
@@ -735,21 +696,22 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
         ),
         PopupMenuItem(
           value: 'delete',
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.delete_outline,
                   color: Colors.red,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               const Text(
                 'Hapus',
                 style: TextStyle(
@@ -766,7 +728,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
   }
 
   // Improved delete confirmation dialog
-  Future<void> showDeleteConfirmationDialog(Product product) async {
+  Future<void> showImprovedDeleteConfirmationDialog(Product product) async {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -776,7 +738,7 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -802,9 +764,9 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Yakin ingin menghapus produk ini?',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.black87,
               ),
@@ -834,13 +796,10 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             style: TextButton.styleFrom(
               foregroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text(
               'Batal',
@@ -852,21 +811,17 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context, true);
               deleteProduct(product.id);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text(
               'Hapus',
               style: TextStyle(
+                color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -879,11 +834,11 @@ class _DaftarProdukScreenState extends State<DaftarProdukScreen>
 
   Widget _buildQuantityButton(IconData icon, VoidCallback onPressed) {
     return Container(
-      width: 32,
-      height: 32,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFF133E87)),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: IconButton(
         icon: Icon(icon, size: 16, color: const Color(0xFF133E87)),
