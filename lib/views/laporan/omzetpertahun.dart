@@ -438,13 +438,61 @@ class _OmzetPertahunScreenState extends State<OmzetPertahunScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red[700], size: 28),
+            const SizedBox(width: 10),
+            const Text(
+              'Ekspor Gagal',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF133E87),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Silakan coba lagi atau periksa ruang penyimpanan Anda.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('TUTUP'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              exportToExcel(); // Retry export
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF133E87),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('COBA LAGI'),
           ),
         ],
       ),
@@ -454,15 +502,74 @@ class _OmzetPertahunScreenState extends State<OmzetPertahunScreen> {
   void _showSuccessDialog(String message, String filePath) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Sukses'),
-        content: Text(message),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green[600], size: 28),
+            const SizedBox(width: 10),
+            const Text(
+              'Ekspor Berhasil',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF133E87),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Lokasi: ${filePath.split('/').last}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[100]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'File Excel berisi data lengkap omzet tahunan dan tersimpan di folder Download Anda.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[600],
+            ),
+            child: const Text('TUTUP'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
               try {
@@ -474,7 +581,24 @@ class _OmzetPertahunScreenState extends State<OmzetPertahunScreen> {
                 _showErrorDialog('Gagal membuka file: ${e.toString()}');
               }
             },
-            child: const Text('Buka File'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF133E87),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(
+                  Icons.visibility,
+                  color: Colors.white,
+                ),
+                SizedBox(width: 4),
+                Text('BUKA FILE'),
+              ],
+            ),
           ),
         ],
       ),

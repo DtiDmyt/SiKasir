@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:excel/excel.dart' hide Border;
-import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
+// ignore: unused_import
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -415,51 +416,38 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
 
   Future<void> _saveToLocalStorage(Excel excel) async {
     try {
-      // Get downloads directory (or documents directory if downloads is not available)
-      Directory? directory;
-      try {
-        if (Platform.isAndroid) {
-          directory = await getExternalStorageDirectory();
-          String newPath = '';
-          List<String> paths = directory!.path.split('/');
-          for (int x = 1; x < paths.length; x++) {
-            String folder = paths[x];
-            if (folder != 'Android') {
-              newPath += '/$folder';
-            } else {
-              break;
-            }
+      if (Platform.isAndroid) {
+        // Cek permission WRITE_EXTERNAL_STORAGE
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+          if (!status.isGranted) {
+            _showErrorDialog('Izin penyimpanan ditolak');
+            return;
           }
-          newPath = '$newPath/Download';
-          directory = Directory(newPath);
-        } else if (Platform.isIOS) {
-          directory = await getApplicationDocumentsDirectory();
         }
 
-        if (!await directory!.exists()) {
-          directory = await getApplicationDocumentsDirectory();
+        Directory? directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+          _showErrorDialog('Folder Download tidak ditemukan');
+          return;
         }
-      } catch (e) {
-        directory = await getApplicationDocumentsDirectory();
+
+        final fileName = 'Laporan_Keuangan_$selectedYear.xlsx';
+        final filePath = '${directory.path}/$fileName';
+
+        final excelBytes = excel.encode();
+        if (excelBytes == null) {
+          throw Exception('Gagal mengencode Excel');
+        }
+
+        final file = File(filePath);
+        await file.writeAsBytes(excelBytes, flush: true);
+
+        _showSuccessDialog('Laporan berhasil disimpan', filePath);
+      } else {
+        _showErrorDialog('Fitur hanya tersedia untuk Android');
       }
-
-      // ignore: unused_local_variable
-      final now = DateTime.now();
-      final fileName = 'Laporan_Keuangan_$selectedYear.xlsx';
-      final filePath = '${directory.path}/$fileName';
-
-      final excelBytes = excel.encode();
-      if (excelBytes == null) {
-        throw Exception('Gagal mengencode Excel');
-      }
-
-      final file = File(filePath);
-      await file.writeAsBytes(excelBytes, flush: true);
-
-      _showSuccessDialog('Laporan berhasil disimpan', filePath);
-    } on MissingPluginException catch (e) {
-      _showErrorDialog(
-          'Plugin tidak tersedia: ${e.message}\nPastikan aplikasi sudah di-rebuild');
     } catch (e) {
       _showErrorDialog('Gagal menyimpan file: ${e.toString()}');
     }
@@ -554,7 +542,7 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
     final isSmallScreen = screenWidth < 360;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.white),
