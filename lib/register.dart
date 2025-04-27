@@ -307,6 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Backward compatibility dengan metode lama
+  // ignore: unused_element
   void _showAlert(String title, String message,
       {bool navigateToLogin = false}) {
     _showCustomAlert(title, message, navigateToLogin: navigateToLogin);
