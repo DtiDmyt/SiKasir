@@ -198,6 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Penggantian metode _showAlert yang lama dengan yang baru
+  // ignore: unused_element
   void _showAlert(String title, String message) {
     _showCustomAlert(title, message);
   }
