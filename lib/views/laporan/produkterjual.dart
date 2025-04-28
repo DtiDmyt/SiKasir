@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart' hide Border;
-import 'package:open_file/open_file.dart';
+import 'package:open_file/open_file.dart'; 
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
@@ -61,18 +61,21 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       for (var transaksi in transaksiQuery.docs) {
         final transaksiData = transaksi.data();
         final timestamp = transaksiData['timestamp'] as Timestamp?;
-
+        
         if (timestamp != null && timestamp.toDate().year == selectedYear) {
           final products = transaksiData['products'] as List<dynamic>?;
-
+          
           if (products != null) {
             for (var product in products) {
               final productId = product['id']?.toString();
               final quantity = (product['quantity'] ?? 0) as int;
-
+              
               if (productId != null) {
-                productSales.update(productId, (value) => value + quantity,
-                    ifAbsent: () => quantity);
+                productSales.update(
+                  productId,
+                  (value) => value + quantity,
+                  ifAbsent: () => quantity
+                );
               }
             }
           }
@@ -111,10 +114,9 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
         final categoryProducts = productsByCategory[category]!;
         if (categoryProducts.isNotEmpty) {
           // Urutkan berdasarkan penjualan tertinggi
-          categoryProducts
-              .sort((a, b) => (b['terjual'] ?? 0).compareTo(a['terjual'] ?? 0));
+          categoryProducts.sort((a, b) => (b['terjual'] ?? 0).compareTo(a['terjual'] ?? 0));
           final maxSold = categoryProducts.first['terjual'] ?? 0;
-
+          
           // Tandai sebagai best seller jika penjualan > 0
           if (maxSold > 0) {
             for (var product in categoryProducts) {
@@ -131,6 +133,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
         products = tempProducts;
         isLoading = false;
       });
+
     } catch (e) {
       print('Error fetching products: $e');
       setState(() => isLoading = false);
@@ -139,182 +142,152 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
 
   // Function to export data to Excel
   Future<void> _exportToExcel() async {
-    try {
-      setState(() {
-        isExporting = true;
-      });
 
-      // Create Excel document
-      final excel = Excel.createExcel();
-      final sheet = excel['Produk Terjual $selectedYear'];
+  try {
+    setState(() {
+      isExporting = true;
+    });
 
-      // Add headers
-      List<String> headers = [
-        'No',
-        'Nama Produk',
-        'Kategori',
-        'Harga',
-        'Total Produk',
-        'Terjual',
-        'Tersisa',
-        'Status',
-        'Best Seller'
-      ];
 
-      // Style for headers
-      CellStyle headerStyle = CellStyle(
-        bold: true,
-        backgroundColorHex: ExcelColor.fromHexString('FF133E87'),
-        fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
-        horizontalAlign: HorizontalAlign.Center,
-      );
+    // Create Excel document
+    final excel = Excel.createExcel();
+    final sheet = excel['Produk Terjual $selectedYear'];
 
-      for (int i = 0; i < headers.length; i++) {
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
-          ..value = TextCellValue(headers[i])
-          ..cellStyle = headerStyle;
+    // Add headers
+    List<String> headers = [
+      'No',
+      'Nama Produk',
+      'Kategori',
+      'Harga',
+      'Total Produk',
+      'Terjual',
+      'Tersisa',
+      'Status',
+      'Best Seller'
+    ];
+
+    // Style for headers
+    CellStyle headerStyle = CellStyle(
+      bold: true,
+      backgroundColorHex: ExcelColor.fromHexString('FF133E87'),
+      fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),   
+      horizontalAlign: HorizontalAlign.Center,
+    );
+
+    for (int i = 0; i < headers.length; i++) {
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+        ..value = TextCellValue(headers[i])  
+        ..cellStyle = headerStyle;
+}
+
+    // Group products by category
+    Map<String, List<Map<String, dynamic>>> groupedProducts = {};
+    for (var product in products) {
+      final category = product['kategori'] ?? 'Umum';
+      if (!groupedProducts.containsKey(category)) {
+        groupedProducts[category] = [];
       }
-
-      // Group products by category
-      Map<String, List<Map<String, dynamic>>> groupedProducts = {};
-      for (var product in products) {
-        final category = product['kategori'] ?? 'Umum';
-        if (!groupedProducts.containsKey(category)) {
-          groupedProducts[category] = [];
-        }
-        groupedProducts[category]!.add(product);
-      }
-
-      int rowIndex = 1;
-      int productNumber = 1;
-
-      // Add category headers and products
-      for (var category in groupedProducts.keys) {
-        // Add category header
-        sheet.cell(
-            CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
-          ..value = TextCellValue('Kategori: $category')
-          ..cellStyle = CellStyle(
-            bold: true,
-            backgroundColorHex: ExcelColor.fromHexString('FFEEEEEE'),
-          );
-        sheet.merge(
-            CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
-            CellIndex.indexByColumnRow(
-                columnIndex: headers.length - 1, rowIndex: rowIndex));
-        rowIndex++;
-
-        // Add products for this category
-        for (var product in groupedProducts[category]!) {
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 0, rowIndex: rowIndex))
-              .value = TextCellValue(productNumber.toString());
-
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 1, rowIndex: rowIndex))
-              .value = TextCellValue(product['nama']?.toString() ?? '');
-
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 2, rowIndex: rowIndex))
-              .value = TextCellValue(product['kategori']?.toString() ?? '');
-
-          sheet
-                  .cell(CellIndex.indexByColumnRow(
-                      columnIndex: 3, rowIndex: rowIndex))
-                  .value =
-              TextCellValue(
-                  'Rp${NumberFormat('#,###').format(product['harga'] ?? 0)}');
-
-          sheet
-                  .cell(CellIndex.indexByColumnRow(
-                      columnIndex: 4, rowIndex: rowIndex))
-                  .value =
-              TextCellValue(((product['stok'] ?? 0) + (product['terjual'] ?? 0))
-                  .toString());
-
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 5, rowIndex: rowIndex))
-              .value = TextCellValue((product['terjual'] ?? 0).toString());
-
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 6, rowIndex: rowIndex))
-              .value = TextCellValue((product['stok'] ?? 0).toString());
-
-          sheet
-              .cell(CellIndex.indexByColumnRow(
-                  columnIndex: 7, rowIndex: rowIndex))
-              .value = TextCellValue(product['status']?.toString() ?? '');
-
-          sheet
-                  .cell(CellIndex.indexByColumnRow(
-                      columnIndex: 8, rowIndex: rowIndex))
-                  .value =
-              TextCellValue(
-                  (product['isBestSellerInCategory'] == true ? 'Ya' : 'Tidak'));
-
-          rowIndex++;
-          productNumber++;
-        }
-
-        // Add empty row after each category
-        rowIndex++;
-      }
-
-      for (int i = 0; i < headers.length; i++) {
-        sheet.setColumnWidth(i, 15.0);
-      }
-      sheet.setColumnWidth(1, 25.0);
-
-      await _saveToLocalStorage(excel);
-    } catch (e) {
-      print('Error exporting to Excel: $e');
-      _showErrorDialog('Gagal mengekspor data: ${e.toString()}');
-    } finally {
-      setState(() {
-        isExporting = false;
-      });
+      groupedProducts[category]!.add(product);
     }
-  }
 
-  Future<void> _saveToLocalStorage(Excel excel) async {
-    try {
-      // Get downloads directory (or documents directory if downloads is not available)
-      Directory? directory;
-      try {
-        if (Platform.isAndroid) {
-          directory = await getExternalStorageDirectory();
-          String newPath = '';
-          List<String> paths = directory!.path.split('/');
-          for (int x = 1; x < paths.length; x++) {
-            String folder = paths[x];
-            if (folder != 'Android') {
-              newPath += '/$folder';
-            } else {
-              break;
-            }
-          }
-          newPath = '$newPath/Download';
-          directory = Directory(newPath);
-        } else if (Platform.isIOS) {
-          directory = await getApplicationDocumentsDirectory();
-        }
+    int rowIndex = 1;
+    int productNumber = 1;
 
-        if (!await directory!.exists()) {
-          directory = await getApplicationDocumentsDirectory();
-        }
-      } catch (e) {
-        directory = await getApplicationDocumentsDirectory();
+    // Add category headers and products
+    for (var category in groupedProducts.keys) {
+      // Add category header
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+        ..value = TextCellValue('Kategori: $category')
+        ..cellStyle = CellStyle(
+          bold: true,
+          backgroundColorHex: ExcelColor.fromHexString('FFEEEEEE'),
+        );
+      sheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex), 
+                CellIndex.indexByColumnRow(columnIndex: headers.length - 1, rowIndex: rowIndex));
+      rowIndex++;
+
+      // Add products for this category
+      for (var product in groupedProducts[category]!) {
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+          .value = TextCellValue(productNumber.toString());
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex))
+          .value = TextCellValue(product['nama']?.toString() ?? '');
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex))
+          .value = TextCellValue(product['kategori']?.toString() ?? '');
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
+          .value = TextCellValue('Rp${NumberFormat('#,###').format(product['harga'] ?? 0)}');
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex))
+          .value = TextCellValue(((product['stok'] ?? 0) + (product['terjual'] ?? 0)).toString());
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex))
+          .value = TextCellValue((product['terjual'] ?? 0).toString());
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex))
+          .value = TextCellValue((product['stok'] ?? 0).toString());
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex))
+          .value = TextCellValue(product['status']?.toString() ?? '');
+
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex))
+          .value = TextCellValue((product['isBestSellerInCategory'] == true ? 'Ya' : 'Tidak'));
+
+
+        rowIndex++;
+        productNumber++;
       }
 
-      final fileName =
-          'Produk_Terjual_${selectedYear}_${DateFormat('dd-MM-yyyy').format(DateTime.now())}.xlsx';
-      final filePath = '${directory.path}/$fileName';
+      // Add empty row after each category
+      rowIndex++;
+    }
 
+    for (int i = 0; i < headers.length; i++) {
+      sheet.setColumnWidth(i, 15.0);
+    }
+    sheet.setColumnWidth(1, 25.0); 
+
+    await _saveToLocalStorage(excel);
+
+  } catch (e) {
+    print('Error exporting to Excel: $e');
+    _showErrorDialog('Gagal mengekspor data: ${e.toString()}');
+  } finally {
+    setState(() {
+      isExporting = false;
+    });
+  }
+}
+
+ Future<void> _saveToLocalStorage(Excel excel) async {
+    try {
+      // Hanya untuk Android, langsung gunakan external storage directory
+      Directory? directory = await getExternalStorageDirectory();
+      String newPath = '';
+      
+      // Split path untuk mendapatkan direktori Download
+      List<String> paths = directory!.path.split('/');
+      for (int x = 1; x < paths.length; x++) {
+        String folder = paths[x];
+        if (folder != 'Android') {
+          newPath += '/$folder';
+        } else {
+          break;
+        }
+      }
+      newPath = '$newPath/Download';
+      directory = Directory(newPath);
+
+      // Buat direktori jika belum ada
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      final fileName = 'Produk_Terjual_${selectedYear}_${DateFormat('dd-MM-yyyy').format(DateTime.now())}.xlsx';
+      final filePath = '${directory.path}/$fileName';
+      
       final excelBytes = excel.encode();
       if (excelBytes == null) {
         throw Exception('Gagal mengencode Excel');
@@ -322,17 +295,17 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
 
       final file = File(filePath);
       await file.writeAsBytes(excelBytes, flush: true);
-
+      
       _showSuccessDialog('Laporan berhasil disimpan', filePath);
+      
     } on MissingPluginException catch (e) {
-      _showErrorDialog(
-          'Plugin tidak tersedia: ${e.message}\nPastikan aplikasi sudah di-rebuild');
+      _showErrorDialog('Plugin tidak tersedia: ${e.message}\nPastikan aplikasi sudah di-rebuild');
     } catch (e) {
       _showErrorDialog('Gagal menyimpan file: ${e.toString()}');
     }
   }
 
-  void _showErrorDialog(String message) {
+void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -414,7 +387,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
     );
   }
 
-  void _showSuccessDialog(String message, String filePath) {
+ void _showSuccessDialog(String message, String filePath) {
     final fileName = filePath.split('/').last;
 
     showDialog(
@@ -554,7 +527,6 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       ),
     );
   }
-
   Widget _buildExportButton() {
     return GestureDetector(
       onTap: isExporting ? null : _exportToExcel,
@@ -573,8 +545,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF133E87)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF133E87)),
                     ),
                   )
                 : Row(
@@ -624,7 +595,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
         backgroundColor: Color(0xFF133E87),
         elevation: 0,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, 
       body: Container(
         color: Colors.white,
         child: Padding(
@@ -637,8 +608,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                 Expanded(
                   child: Center(
                     child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF133E87)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF133E87)),
                     ),
                   ),
                 )
@@ -648,8 +618,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 48, color: Colors.grey[400]),
+                        Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
                         SizedBox(height: 16),
                         Text(
                           'Tidak ada produk ditemukan',
@@ -701,8 +670,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Row(
                     children: [
                       Text(
@@ -724,13 +692,10 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                     ],
                   ),
                 ),
-                ...groupedProducts[category]!
-                    .map((product) => Padding(
-                          padding:
-                              EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
-                          child: _buildProductCard(context, product),
-                        ))
-                    .toList(),
+                ...groupedProducts[category]!.map((product) => Padding(
+                  padding: EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
+                  child: _buildProductCard(context, product),
+                )).toList(),
                 SizedBox(height: 8),
               ],
             ),
@@ -862,8 +827,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.star,
-                      color: Colors.amber, size: isSmallScreen ? 16 : 18),
+                  Icon(Icons.star, color: Colors.amber, size: isSmallScreen ? 16 : 18),
                   SizedBox(width: isSmallScreen ? 6 : 8),
                   Expanded(
                     child: Text(
@@ -929,7 +893,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       padding: EdgeInsets.symmetric(
           vertical: isSmallScreen ? 8 : 12, horizontal: isSmallScreen ? 4 : 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, 
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.grey[300]!,
@@ -962,15 +926,14 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
     );
   }
 
-  Widget _buildProductDetail(
-      BuildContext context, Map<String, dynamic> product) {
+  Widget _buildProductDetail(BuildContext context, Map<String, dynamic> product) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
 
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, 
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.grey[300]!,
