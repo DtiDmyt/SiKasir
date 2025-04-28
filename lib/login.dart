@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.warning,
+                  Icons.error_outline,
                   color: Colors.white,
                   size: 36,
                 ),
