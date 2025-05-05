@@ -15,9 +15,8 @@ class ProdukTerjualScreen extends StatefulWidget {
 }
 
 class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
-  int selectedYear = DateTime.now().year;
-  final int endYear = DateTime.now().year;
-  final int startYear = DateTime.now().year - 5;
+  DateTime startDate = DateTime.now();
+  DateTime endDate = DateTime.now();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -42,8 +41,52 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
     }
   }
 
+  Future<void> _selectDateRange(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate ? startDate : endDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Color(0xFF133E87),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          startDate = picked;
+          if (endDate.isBefore(startDate)) {
+            endDate = startDate;
+          }
+        } else {
+          endDate = picked.isAfter(DateTime.now()) ? DateTime.now() : picked;
+          if (endDate.isBefore(startDate)) {
+            startDate = endDate;
+          }
+        }
+      });
+      _fetchProducts();
+    }
+  }
+
   Future<void> _fetchProducts() async {
     if (userEmail == null) return;
+
+    setState(() {
+      isLoading = true;
+    });
 
     try {
       final produkQuery = await _firestore
@@ -54,30 +97,31 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       List<Map<String, dynamic>> tempProducts = [];
       Map<String, int> productSales = {};
 
+      Timestamp startTimestamp = Timestamp.fromDate(startDate);
+      Timestamp endTimestamp = Timestamp.fromDate(endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1)));
+
       final transaksiQuery = await _firestore
           .collection('transaksi')
           .where('email', isEqualTo: userEmail)
+          .where('timestamp', isGreaterThanOrEqualTo: startTimestamp)
+          .where('timestamp', isLessThanOrEqualTo: endTimestamp)
           .get();
 
       for (var transaksi in transaksiQuery.docs) {
         final transaksiData = transaksi.data();
-        final timestamp = transaksiData['timestamp'] as Timestamp?;
+        final products = transaksiData['products'] as List<dynamic>?;
         
-        if (timestamp != null && timestamp.toDate().year == selectedYear) {
-          final products = transaksiData['products'] as List<dynamic>?;
-          
-          if (products != null) {
-            for (var product in products) {
-              final productId = product['id']?.toString();
-              final quantity = (product['quantity'] ?? 0) as int;
-              
-              if (productId != null) {
-                productSales.update(
-                  productId,
-                  (value) => value + quantity,
-                  ifAbsent: () => quantity
-                );
-              }
+        if (products != null) {
+          for (var product in products) {
+            final productId = product['id']?.toString();
+            final quantity = (product['quantity'] ?? 0) as int;
+            
+            if (productId != null) {
+              productSales.update(
+                productId,
+                (value) => value + quantity,
+                ifAbsent: () => quantity
+              );
             }
           }
         }
@@ -141,193 +185,189 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
     }
   }
 
-  // Function to export data to Excel
   Future<void> _exportToExcel() async {
-  try {
-    setState(() {
-      isExporting = true;
-    });
+    try {
+      setState(() {
+        isExporting = true;
+      });
 
-    // Buat dokumen Excel
-    final excel = Excel.createExcel();
-    final sheet = excel['Produk Terjual $selectedYear'];
+      // Buat dokumen Excel
+      final excel = Excel.createExcel();
+      final sheet = excel['Produk Terjual ${DateFormat('dd-MM-yyyy').format(startDate)} hingga ${DateFormat('dd-MM-yyyy').format(endDate)}'];
 
-    // Hapus Sheet1 default
-    if (excel.sheets.keys.contains('Sheet1')) {
-      excel.delete('Sheet1');
-    }
-
-    // Header
-    List<String> headers = [
-      'No',
-      'Nama Produk',
-      'Kategori',
-      'Harga',
-      'Total Produk',
-      'Terjual',
-      'Tersisa',
-      'Status',
-      'Best Seller'
-    ];
-
-    // Style untuk header
-    CellStyle headerStyle = CellStyle(
-      bold: true,
-      backgroundColorHex: ExcelColor.fromHexString('FF133E87'),
-      fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
-      horizontalAlign: HorizontalAlign.Center,
-    );
-
-    for (int i = 0; i < headers.length; i++) {
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
-        ..value = TextCellValue(headers[i])
-        ..cellStyle = headerStyle;
-    }
-
-    // Grupkan produk berdasarkan kategori
-    Map<String, List<Map<String, dynamic>>> groupedProducts = {};
-    for (var product in products) {
-      final category = product['kategori'] ?? 'Umum';
-      if (!groupedProducts.containsKey(category)) {
-        groupedProducts[category] = [];
+      // Hapus Sheet1 default
+      if (excel.sheets.keys.contains('Sheet1')) {
+        excel.delete('Sheet1');
       }
-      groupedProducts[category]!.add(product);
-    }
 
-    int rowIndex = 1;
-    int productNumber = 1;
+      // Header
+      List<String> headers = [
+        'No',
+        'Nama Produk',
+        'Kategori',
+        'Harga',
+        'Total Produk',
+        'Terjual',
+        'Tersisa',
+        'Status',
+        'Best Seller'
+      ];
 
-    // Tambahkan data produk
-    for (var category in groupedProducts.keys) {
-      // Header kategori
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
-        ..value = TextCellValue('Kategori: $category')
-        ..cellStyle = CellStyle(
-          bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('FFEEEEEE'),
-        );
-      sheet.merge(
-        CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
-        CellIndex.indexByColumnRow(columnIndex: headers.length - 1, rowIndex: rowIndex),
+      // Style untuk header
+      CellStyle headerStyle = CellStyle(
+        bold: true,
+        backgroundColorHex: ExcelColor.fromHexString('FF133E87'),
+        fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
+        horizontalAlign: HorizontalAlign.Center,
       );
-      rowIndex++;
 
-      // Inisialisasi total kategori
-      int totalProduk = 0;
-      int totalTerjual = 0;
-      int totalTersisa = 0;
+      for (int i = 0; i < headers.length; i++) {
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          ..value = TextCellValue(headers[i])
+          ..cellStyle = headerStyle;
+      }
 
-      for (var product in groupedProducts[category]!) {
-        final stok = (product['stok'] ?? 0) as int;
-        final terjual = (product['terjual'] ?? 0) as int;
+      // Grupkan produk berdasarkan kategori
+      Map<String, List<Map<String, dynamic>>> groupedProducts = {};
+      for (var product in products) {
+        final category = product['kategori'] ?? 'Umum';
+        if (!groupedProducts.containsKey(category)) {
+          groupedProducts[category] = [];
+        }
+        groupedProducts[category]!.add(product);
+      }
 
+      int rowIndex = 1;
+      int productNumber = 1;
+
+      // Tambahkan data produk
+      for (var category in groupedProducts.keys) {
+        // Header kategori
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
-          .value = TextCellValue(productNumber.toString());
+          ..value = TextCellValue('Kategori: $category')
+          ..cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex: ExcelColor.fromHexString('FFEEEEEE'),
+          );
+        sheet.merge(
+          CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
+          CellIndex.indexByColumnRow(columnIndex: headers.length - 1, rowIndex: rowIndex),
+        );
+        rowIndex++;
 
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex))
-          .value = TextCellValue(product['nama']?.toString() ?? '');
+        // Inisialisasi total kategori
+        int totalProduk = 0;
+        int totalTerjual = 0;
+        int totalTersisa = 0;
 
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex))
-          .value = TextCellValue(product['kategori']?.toString() ?? '');
+        for (var product in groupedProducts[category]!) {
+          final stok = (product['stok'] ?? 0) as int;
+          final terjual = (product['terjual'] ?? 0) as int;
 
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+            .value = TextCellValue(productNumber.toString());
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex))
+            .value = TextCellValue(product['nama']?.toString() ?? '');
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex))
+            .value = TextCellValue(product['kategori']?.toString() ?? '');
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
+            .value = TextCellValue('Rp${NumberFormat('#,###').format(product['harga'] ?? 0)}');
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex))
+            .value = TextCellValue((stok + terjual).toString());
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex))
+            .value = TextCellValue(terjual.toString());
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex))
+            .value = TextCellValue(stok.toString());
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex))
+            .value = TextCellValue(product['status']?.toString() ?? '');
+
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex))
+            .value = TextCellValue((product['isBestSellerInCategory'] == true ? 'Ya' : 'Tidak'));
+
+          // Update total
+          totalProduk += stok + terjual;
+          totalTerjual += terjual;
+          totalTersisa += stok;
+
+          rowIndex++;
+          productNumber++;
+        }
+
+        // Baris total per kategori
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
-          .value = TextCellValue('Rp${NumberFormat('#,###').format(product['harga'] ?? 0)}');
+          ..value = TextCellValue('Total')
+          ..cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
+          );
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex))
-          .value = TextCellValue((stok + terjual).toString());
+          ..value = TextCellValue(totalProduk.toString())
+          ..cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
+          );
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex))
-          .value = TextCellValue(terjual.toString());
+          ..value = TextCellValue(totalTerjual.toString())
+          ..cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
+          );
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex))
-          .value = TextCellValue(stok.toString());
-
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex))
-          .value = TextCellValue(product['status']?.toString() ?? '');
-
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex))
-          .value = TextCellValue((product['isBestSellerInCategory'] == true ? 'Ya' : 'Tidak'));
-
-        // Update total
-        totalProduk += stok + terjual;
-        totalTerjual += terjual;
-        totalTersisa += stok;
+          ..value = TextCellValue(totalTersisa.toString())
+          ..cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
+          );
 
         rowIndex++;
-        productNumber++;
+        rowIndex++;
       }
 
-      // Baris total per kategori
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
-        ..value = TextCellValue('Total')
-        ..cellStyle = CellStyle(
-          bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
-        );
+      // Set lebar kolom
+      for (int i = 0; i < headers.length; i++) {
+        sheet.setColumnWidth(i, 15.0);
+      }
+      sheet.setColumnWidth(1, 25.0);
 
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex))
-        ..value = TextCellValue(totalProduk.toString())
-        ..cellStyle = CellStyle(
-          bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
-        );
+      await _saveToLocalStorage(excel);
 
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex))
-        ..value = TextCellValue(totalTerjual.toString())
-        ..cellStyle = CellStyle(
-          bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
-        );
-
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex))
-        ..value = TextCellValue(totalTersisa.toString())
-        ..cellStyle = CellStyle(
-          bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('FFCCCCCC'),
-        );
-
-      rowIndex++;
-      rowIndex++;
+    } catch (e) {
+      print('Error exporting to Excel: $e');
+      _showErrorDialog('Gagal mengekspor data: ${e.toString()}');
+    } finally {
+      setState(() {
+        isExporting = false;
+      });
     }
+  }
 
-    // Set lebar kolom
-    for (int i = 0; i < headers.length; i++) {
-      sheet.setColumnWidth(i, 15.0);
+  Future<void> _requestPermission() async {
+    if (await Permission.manageExternalStorage.isGranted) {
+      return;
     }
-    sheet.setColumnWidth(1, 25.0);
-
-    await _saveToLocalStorage(excel);
-
-  } catch (e) {
-    print('Error exporting to Excel: $e');
-    _showErrorDialog('Gagal mengekspor data: ${e.toString()}');
-  } finally {
-    setState(() {
-      isExporting = false;
-    });
+    
+    var status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      throw Exception('Permission denied');
+    }
   }
-}
 
-Future<void> _requestPermission() async {
-  if (await Permission.manageExternalStorage.isGranted) {
-    return;
-  }
-  
-  var status = await Permission.manageExternalStorage.request();
-  if (!status.isGranted) {
-    throw Exception('Permission denied');
-  }
-}
-
-
- Future<void> _saveToLocalStorage(Excel excel) async {
+  Future<void> _saveToLocalStorage(Excel excel) async {
     try {
       await _requestPermission();
-      // Hanya untuk Android, langsung gunakan external storage directory
       Directory? directory = await getExternalStorageDirectory();
       String newPath = '';
       
-      // Split path untuk mendapatkan direktori Download
       List<String> paths = directory!.path.split('/');
       for (int x = 1; x < paths.length; x++) {
         String folder = paths[x];
@@ -340,12 +380,11 @@ Future<void> _requestPermission() async {
       newPath = '$newPath/Download';
       directory = Directory(newPath);
 
-      // Buat direktori jika belum ada
       if (!await directory.exists()) {
         await directory.create(recursive: true);
       }
 
-      final fileName = 'Produk_Terjual_${selectedYear}_${DateFormat('dd-MM-yyyy').format(DateTime.now())}.xlsx';
+      final fileName = 'Produk_Terjual_${DateFormat('dd-MM-yyyy').format(startDate)}_hingga_${DateFormat('dd-MM-yyyy').format(endDate)}.xlsx';
       final filePath = '${directory.path}/$fileName';
       
       final excelBytes = excel.encode();
@@ -365,7 +404,7 @@ Future<void> _requestPermission() async {
     }
   }
 
-void _showErrorDialog(String message) {
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -436,6 +475,7 @@ void _showErrorDialog(String message) {
                     'OK',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
+                      color: Colors.white
                     ),
                   ),
                 ),
@@ -447,7 +487,7 @@ void _showErrorDialog(String message) {
     );
   }
 
- void _showSuccessDialog(String message, String filePath) {
+  void _showSuccessDialog(String message, String filePath) {
     final fileName = filePath.split('/').last;
 
     showDialog(
@@ -587,6 +627,7 @@ void _showErrorDialog(String message) {
       ),
     );
   }
+
   Widget _buildExportButton() {
     return GestureDetector(
       onTap: isExporting ? null : _exportToExcel,
@@ -634,6 +675,7 @@ void _showErrorDialog(String message) {
     final isSmallScreen = screenWidth < 360;
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.white),
@@ -655,54 +697,161 @@ void _showErrorDialog(String message) {
         backgroundColor: Color(0xFF133E87),
         elevation: 0,
       ),
-      backgroundColor: Colors.white, 
-      body: Container(
-        color: Colors.white,
-        child: Padding(
-          padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
-          child: Column(
-            children: [
-              _buildYearDropdown(),
-              SizedBox(height: isSmallScreen ? 8 : 12),
-              if (isLoading)
+      body: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
                 Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF133E87)),
+                  child: GestureDetector(
+                    onTap: () => _selectDateRange(context, true),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: isSmallScreen ? 14 : 16,
+                        horizontal: isSmallScreen ? 12 : 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF133E87),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                color: Colors.white,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
+                              SizedBox(width: isSmallScreen ? 8 : 12),
+                              Text(
+                                'Dari',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(startDate),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                )
-              else if (products.isEmpty)
+                ),
+                SizedBox(width: 10),
                 Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
-                        SizedBox(height: 16),
-                        Text(
-                          'Tidak ada produk ditemukan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
+                  child: GestureDetector(
+                    onTap: () => _selectDateRange(context, false),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: isSmallScreen ? 14 : 16,
+                        horizontal: isSmallScreen ? 12 : 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF133E87),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Tahun $selectedYear',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                color: Colors.white,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
+                              SizedBox(width: isSmallScreen ? 8 : 12),
+                              Text(
+                                'Hingga',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(endDate),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                )
-              else
-                _buildProductList(),
-            ],
-          ),
+                ),
+              ],
+            ),
+            SizedBox(height: isSmallScreen ? 18 : 24),
+            if (isLoading)
+              Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF133E87),
+                  ),
+                ),
+              )
+            else if (products.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
+                      SizedBox(height: 16),
+                      Text(
+                        'Tidak ada produk ditemukan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              _buildProductList(),
+          ],
         ),
       ),
     );
@@ -759,54 +908,6 @@ void _showErrorDialog(String message) {
                 SizedBox(height: 8),
               ],
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildYearDropdown() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Color(0xFF133E87),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.calendar_today, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text('Tahun',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-            ],
-          ),
-          DropdownButton<int>(
-            value: selectedYear,
-            dropdownColor: Color(0xFF133E87),
-            icon: Icon(Icons.arrow_drop_down, color: Colors.white),
-            underline: SizedBox(),
-            style: TextStyle(color: Colors.white, fontSize: 16),
-            onChanged: (int? newValue) {
-              setState(() {
-                selectedYear = newValue!;
-                isLoading = true;
-              });
-              _fetchProducts();
-            },
-            items: List.generate(
-              endYear - startYear + 1,
-              (index) => DropdownMenuItem(
-                value: startYear + index,
-                child: Text((startYear + index).toString(),
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1007,7 +1108,7 @@ void _showErrorDialog(String message) {
           _buildInfoRow(
             context,
             Icons.calendar_month_outlined,
-            'Periode: Januari - Desember $selectedYear',
+            'Periode: ${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
           ),
           SizedBox(height: isSmallScreen ? 6 : 8),
           _buildInfoRow(
@@ -1051,15 +1152,4 @@ void _showErrorDialog(String message) {
       ],
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      primaryColor: Color(0xFF133E87),
-      scaffoldBackgroundColor: Colors.white,
-    ),
-    home: ProdukTerjualScreen(),
-  ));
 }
