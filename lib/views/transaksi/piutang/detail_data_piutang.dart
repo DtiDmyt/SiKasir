@@ -22,14 +22,14 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
     symbol: 'Rp',
     decimalDigits: 0,
   );
-
-  final TextEditingController _initialPaymentController =
-      TextEditingController();
-
+  
+  final TextEditingController _initialPaymentController = TextEditingController();
+  
   Map<String, dynamic>? _transactionData;
   bool _isLoading = true;
   double _initialPayment = 0;
   double _totalAmount = 0;
+  double _remainingDebt = 0;
 
   @override
   void initState() {
@@ -54,15 +54,12 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
         setState(() {
           _transactionData = transactionDoc.data() as Map<String, dynamic>;
           _statusPembayaran = _transactionData!['status'] ?? 'Belum Lunas';
-          _initialPayment =
-              (_transactionData!['initialPayment'] ?? 0).toDouble();
+          _initialPayment = (_transactionData!['initialPayment'] ?? 0).toDouble();
           _totalAmount = (_transactionData!['totalAmount'] ?? 0).toDouble();
-
-          _initialPaymentController.text = currencyFormatter
-              .format(_initialPayment)
-              .replaceAll('Rp', '')
-              .trim();
-
+          _remainingDebt = (_transactionData!['remainingDebt'] ?? _totalAmount - _initialPayment).toDouble();
+          
+          _initialPaymentController.text = currencyFormatter.format(_initialPayment).replaceAll('Rp', '').trim();
+          
           _isLoading = false;
         });
       } else {
@@ -81,14 +78,25 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
     }
   }
 
+  void _updateRemainingDebt() {
+    setState(() {
+      _remainingDebt = _totalAmount - _initialPayment;
+      if (_remainingDebt < 0) {
+        _remainingDebt = 0;
+      }
+    });
+  }
+
   void _checkPaymentStatus() {
     if (_initialPayment >= _totalAmount) {
       setState(() {
         _statusPembayaran = 'Lunas';
+        _remainingDebt = 0;
       });
     } else {
       setState(() {
         _statusPembayaran = 'Belum Lunas';
+        _updateRemainingDebt();
       });
     }
   }
@@ -103,7 +111,7 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
 
   String _formatToRupiah(String text) {
     if (text.isEmpty) return '';
-
+    
     double value = _parseRupiahToDouble(text);
     return currencyFormatter.format(value).replaceAll('Rp', '').trim();
   }
@@ -339,8 +347,7 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                     controller: _initialPaymentController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -354,13 +361,12 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                     ],
                     onChanged: (value) {
                       String formattedValue = _formatToRupiah(value);
-
+                      
                       _initialPaymentController.value = TextEditingValue(
                         text: formattedValue,
-                        selection: TextSelection.collapsed(
-                            offset: formattedValue.length),
+                        selection: TextSelection.collapsed(offset: formattedValue.length),
                       );
-
+                      
                       setState(() {
                         _initialPayment = _parseRupiahToDouble(formattedValue);
                         _checkPaymentStatus();
@@ -398,7 +404,7 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _statusPembayaran == 'Lunas'
+                    color: _statusPembayaran == 'Lunas' 
                         ? Colors.green.withOpacity(0.1)
                         : Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -412,8 +418,8 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                     _statusPembayaran,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: _statusPembayaran == 'Lunas'
-                          ? Colors.green
+                      color: _statusPembayaran == 'Lunas' 
+                          ? Colors.green 
                           : Colors.red,
                     ),
                   ),
@@ -429,14 +435,12 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 Text(
-                  currencyFormatter.format(_totalAmount - _initialPayment > 0
-                      ? _totalAmount - _initialPayment
-                      : 0),
+                  currencyFormatter.format(_remainingDebt),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: _totalAmount - _initialPayment > 0
-                        ? Colors.red
+                    color: _remainingDebt > 0 
+                        ? Colors.red 
                         : Colors.green,
                   ),
                 ),
@@ -462,8 +466,9 @@ class _DetailPiutangScreenState extends State<DetailPiutangScreen> {
                   .update({
                 'status': _statusPembayaran,
                 'initialPayment': _initialPayment,
+                'remainingDebt': _remainingDebt,
               });
-
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Data berhasil diperbarui')),
               );
