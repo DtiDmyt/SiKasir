@@ -154,7 +154,7 @@ class _StrukScreenState extends State<StrukScreen> {
                             const SizedBox(height: 32),
 
                             // Transaction Info
-                            _buildInfoRow('Nomor Transaksi',
+                            _buildInfoRow('Id',
                                 transactionData!['transactionId']),
                             _buildInfoRow(
                                 'Tanggal',
