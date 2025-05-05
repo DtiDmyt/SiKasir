@@ -29,13 +29,13 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
     'Des'
   ];
   final List<int> years = [];
-  
+
   final Color primaryColor = Color(0xFF133E87);
   final Color accentColor = Color(0xFF133E87);
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late String userEmail;
-  
+
   // Controller untuk search bar
   TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
@@ -50,7 +50,7 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
       years.add(year);
     }
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -165,16 +165,17 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                   size: 22,
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey.shade600, size: 20),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = "";
-                        });
-                      },
-                    )
-                  : null,
+                    ? IconButton(
+                        icon: Icon(Icons.clear,
+                            color: Colors.grey.shade600, size: 20),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = "";
+                          });
+                        },
+                      )
+                    : null,
                 border: InputBorder.none,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -184,16 +185,18 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: primaryColor, width: 1.5),
                 ),
-                contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                 filled: true,
                 fillColor: Colors.white,
               ),
             ),
           ),
-          
+
           // Filter Row: Status, Bulan, dan Tahun - IMPROVED LAYOUT
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
                 // Status Dropdown - Menggunakan Expanded dengan flex yang sama
@@ -208,7 +211,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedStatus,
-                        isExpanded: true, // Memastikan dropdown mengisi seluruh container
+                        isExpanded:
+                            true, // Memastikan dropdown mengisi seluruh container
                         icon: Icon(Icons.arrow_drop_down, color: Colors.white),
                         dropdownColor: primaryColor,
                         style: TextStyle(color: Colors.white, fontSize: 16),
@@ -217,8 +221,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                             selectedStatus = newValue!;
                           });
                         },
-                        items:
-                            ["Semua", "Belum Lunas", "Lunas"].map((String value) {
+                        items: ["Semua", "Belum Lunas", "Lunas"]
+                            .map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(value,
@@ -229,9 +233,9 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(width: 8), // Jarak antara dropdown
-                
+
                 // Bulan Dropdown
                 Expanded(
                   flex: 1,
@@ -244,7 +248,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedMonth,
-                        isExpanded: true, // Memastikan dropdown mengisi seluruh container
+                        isExpanded:
+                            true, // Memastikan dropdown mengisi seluruh container
                         icon: Icon(Icons.arrow_drop_down, color: Colors.white),
                         dropdownColor: primaryColor,
                         style: TextStyle(color: Colors.white, fontSize: 16),
@@ -264,9 +269,9 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(width: 8), // Jarak antara dropdown bulan dan tahun
-                
+
                 // Tahun Dropdown
                 Expanded(
                   flex: 1,
@@ -279,7 +284,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedYear.toString(),
-                        isExpanded: true, // Memastikan dropdown mengisi seluruh container
+                        isExpanded:
+                            true, // Memastikan dropdown mengisi seluruh container
                         icon: Icon(Icons.arrow_drop_down, color: Colors.white),
                         dropdownColor: primaryColor,
                         style: TextStyle(color: Colors.white, fontSize: 16),
@@ -302,7 +308,7 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
               ],
             ),
           ),
-          
+
           // List Data Piutang
           Expanded(
             child: RefreshIndicator(
@@ -313,30 +319,36 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   }
-  
+
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
-  
+
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Center(child: Text('Tidak ada data piutang pada periode ini.'));
+                    return Center(
+                        child:
+                            Text('Tidak ada data piutang pada periode ini.'));
                   }
-  
+
                   final allTransactions = snapshot.data!.docs;
-                  
+
                   // Filter berdasarkan pencarian jika ada query
-                  final transactions = _searchQuery.isEmpty 
-                    ? allTransactions 
-                    : allTransactions.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final customerName = (data['customerName'] ?? '').toString().toLowerCase();
-                        return customerName.contains(_searchQuery);
-                      }).toList();
-                  
+                  final transactions = _searchQuery.isEmpty
+                      ? allTransactions
+                      : allTransactions.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final customerName = (data['customerName'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          return customerName.contains(_searchQuery);
+                        }).toList();
+
                   if (transactions.isEmpty) {
-                    return Center(child: Text('Tidak ada hasil yang sesuai dengan pencarian.'));
+                    return Center(
+                        child: Text(
+                            'Tidak ada hasil yang sesuai dengan pencarian.'));
                   }
-  
+
                   return ListView.builder(
                     itemCount: transactions.length,
                     itemBuilder: (context, index) {
@@ -348,7 +360,7 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                       final timestamp = data['timestamp'] as Timestamp;
                       final formattedDate = _formatTimestamp(timestamp);
                       final status = data['status'] ?? 'Belum Lunas';
-  
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
@@ -356,8 +368,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
-                            border:
-                                Border.all(color: Colors.grey.shade400, width: 1),
+                            border: Border.all(
+                                color: Colors.grey.shade400, width: 1),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.shade300,
@@ -406,7 +418,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                                               SizedBox(width: 8),
                                               Text(formattedDate,
                                                   style: TextStyle(
-                                                      color: Colors.grey.shade600,
+                                                      color:
+                                                          Colors.grey.shade600,
                                                       fontSize: 14)),
                                             ],
                                           ),
@@ -414,7 +427,8 @@ class _DataPiutangScreenState extends State<DataPiutangScreen> {
                                       ),
                                     ),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Container(
                                           padding: EdgeInsets.symmetric(
