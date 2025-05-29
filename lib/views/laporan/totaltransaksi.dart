@@ -741,6 +741,7 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth >= 600;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -770,118 +771,30 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDateRange(context, true),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isSmallScreen ? 14 : 16,
-                        horizontal: isSmallScreen ? 12 : 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF133E87),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: isSmallScreen ? 18 : 20,
-                              ),
-                              SizedBox(width: isSmallScreen ? 8 : 12),
-                              Text(
-                                'Dari',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(startDate),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            // Responsif untuk semua ukuran layar
+            if (isTablet)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDatePicker(context, true),
                   ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDateRange(context, false),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isSmallScreen ? 14 : 16,
-                        horizontal: isSmallScreen ? 12 : 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF133E87),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: isSmallScreen ? 18 : 20,
-                              ),
-                              SizedBox(width: isSmallScreen ? 8 : 12),
-                              Text(
-                                'Hingga',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(endDate),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: _buildDatePicker(context, false),
                   ),
-                ),
-              ],
-            ),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  _buildDatePicker(context, true),
+                  SizedBox(height: 10),
+                  _buildDatePicker(context, false),
+                ],
+              ),
+
             SizedBox(height: isSmallScreen ? 18 : 24),
+
             Expanded(
               child: isLoading
                   ? Center(
@@ -890,10 +803,12 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
                       ),
                     )
                   : GridView.count(
-                      crossAxisCount: isSmallScreen ? 1 : 2,
+                      crossAxisCount: isTablet ? 2 : 1,
                       crossAxisSpacing: isSmallScreen ? 12 : 16,
                       mainAxisSpacing: isSmallScreen ? 12 : 16,
-                      childAspectRatio: isSmallScreen ? 1.2 : 1.1,
+                      childAspectRatio: isTablet 
+                          ? (screenWidth < 700 ? 1.5 : 1.3)
+                          : (screenWidth < 400 ? 1.2 : 1.3),
                       children: [
                         buildCard(
                             context,
@@ -908,6 +823,64 @@ class _TotalTransaksiScreenState extends State<TotalTransaksiScreen> {
                             formatPrice(totalPengeluaran), Icons.trending_down),
                       ],
                     ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context, bool isStartDate) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
+    return GestureDetector(
+      onTap: () => _selectDateRange(context, isStartDate),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 14 : 16,
+          horizontal: isSmallScreen ? 12 : 16,
+        ),
+        decoration: BoxDecoration(
+          color: Color(0xFF133E87),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.white,
+                  size: isSmallScreen ? 18 : 20,
+                ),
+                SizedBox(width: isSmallScreen ? 8 : 12),
+                Text(
+                  isStartDate ? 'Dari' : 'Hingga',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              DateFormat('dd/MM/yyyy')
+                  .format(isStartDate ? startDate : endDate),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 14 : 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),

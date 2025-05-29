@@ -58,7 +58,15 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
             ),
             dialogBackgroundColor: Colors.white,
           ),
-          child: child!,
+          child: MediaQuery(
+            // Perbaikan responsivitas untuk date picker
+            data: MediaQuery.of(context).copyWith(
+              textScaleFactor: MediaQuery.of(context).size.width > 600 
+                ? 1.2 
+                : 1.0,
+            ),
+            child: child!,
+          ),
         );
       },
     );
@@ -699,6 +707,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -707,11 +716,12 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
           icon: Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Produk Terjual',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
+            fontSize: isTablet ? 22 : 18,
           ),
         ),
         actions: [
@@ -723,161 +733,132 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
         backgroundColor: Color(0xFF133E87),
         elevation: 0,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Perbaikan responsivitas untuk date pickers
+              if (isTablet)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDatePickerButton(context, true),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: _buildDatePickerButton(context, false),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildDatePickerButton(context, true),
+                    SizedBox(height: 12),
+                    _buildDatePickerButton(context, false),
+                  ],
+                ),
+              
+              SizedBox(height: isSmallScreen ? 18 : 24),
+              if (isLoading)
+                Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF133E87),
+                    ),
+                  ),
+                )
+              else if (products.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inventory_2_outlined,
+                            size: isTablet ? 64 : 48, color: Colors.grey[400]),
+                        SizedBox(height: 16),
+                        Text(
+                          'Tidak ada produk ditemukan',
+                          style: TextStyle(
+                            fontSize: isTablet ? 20 : 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                _buildProductList(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePickerButton(BuildContext context, bool isStartDate) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
+
+    return GestureDetector(
+      onTap: () => _selectDateRange(context, isStartDate),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 14 : isTablet ? 20 : 16,
+          horizontal: isSmallScreen ? 12 : isTablet ? 24 : 16,
+        ),
+        decoration: BoxDecoration(
+          color: Color(0xFF133E87),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDateRange(context, true),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isSmallScreen ? 14 : 16,
-                        horizontal: isSmallScreen ? 12 : 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF133E87),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: isSmallScreen ? 18 : 20,
-                              ),
-                              SizedBox(width: isSmallScreen ? 8 : 12),
-                              Text(
-                                'Dari',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(startDate),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.white,
+                  size: isSmallScreen ? 18 : isTablet ? 28 : 20,
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDateRange(context, false),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isSmallScreen ? 14 : 16,
-                        horizontal: isSmallScreen ? 12 : 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF133E87),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: isSmallScreen ? 18 : 20,
-                              ),
-                              SizedBox(width: isSmallScreen ? 8 : 12),
-                              Text(
-                                'Hingga',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(endDate),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                SizedBox(width: isSmallScreen ? 8 : isTablet ? 16 : 12),
+                Text(
+                  isStartDate ? 'Dari' : 'Hingga',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 14 : isTablet ? 22 : 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: isSmallScreen ? 18 : 24),
-            if (isLoading)
-              Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF133E87),
-                  ),
-                ),
-              )
-            else if (products.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory_2_outlined,
-                          size: 48, color: Colors.grey[400]),
-                      SizedBox(height: 16),
-                      Text(
-                        'Tidak ada produk ditemukan',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              _buildProductList(),
+            Text(
+              DateFormat('dd/MM/yyyy').format(isStartDate ? startDate : endDate),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 14 : isTablet ? 22 : 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
@@ -887,6 +868,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   Widget _buildProductList() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     // Kelompokkan produk berdasarkan kategori
     Map<String, List<Map<String, dynamic>>> groupedProducts = {};
@@ -906,14 +888,16 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                  padding: EdgeInsets.symmetric(
+                    vertical: isTablet ? 16 : 8.0, 
+                    horizontal: isTablet ? 24 : 16
+                  ),
                   child: Row(
                     children: [
                       Text(
                         category,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: isTablet ? 24 : 18,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF133E87),
                         ),
@@ -922,7 +906,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                       Text(
                         '${groupedProducts[category]!.length} Produk',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isTablet ? 18 : 14,
                           color: Colors.grey[600],
                         ),
                       ),
@@ -931,12 +915,15 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                 ),
                 ...groupedProducts[category]!
                     .map((product) => Padding(
-                          padding:
-                              EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
+                          padding: EdgeInsets.only(
+                            bottom: isSmallScreen ? 12 : isTablet ? 20 : 16,
+                            left: isTablet ? 16 : 0,
+                            right: isTablet ? 16 : 0,
+                          ),
                           child: _buildProductCard(context, product),
                         ))
                     .toList(),
-                SizedBox(height: 8),
+                SizedBox(height: isTablet ? 16 : 8),
               ],
             ),
         ],
@@ -947,13 +934,14 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   Widget _buildProductCard(BuildContext context, Map<String, dynamic> product) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : isTablet ? 24 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -972,7 +960,11 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                 child: Text(
                   product['nama'],
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 18 : 20,
+                    fontSize: isSmallScreen 
+                      ? 18 
+                      : isTablet 
+                        ? 26 
+                        : 20,
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -981,7 +973,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
               ),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 8 : 12,
+                  horizontal: isSmallScreen ? 8 : isTablet ? 16 : 12,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
@@ -997,37 +989,42 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
                     color: product['status'] == 'Aktif'
                         ? Color(0xFF133E87)
                         : Colors.red,
-                    fontSize: isSmallScreen ? 10 : 12,
+                    fontSize: isSmallScreen ? 10 : isTablet ? 16 : 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: isSmallScreen ? 8 : 12),
+          SizedBox(height: isSmallScreen ? 8 : isTablet ? 16 : 12),
           _buildStats(context, product),
-          SizedBox(height: isSmallScreen ? 12 : 16),
+          SizedBox(height: isSmallScreen ? 12 : isTablet ? 20 : 16),
           _buildProductDetail(context, product),
           if (product['isBestSellerInCategory'] == true) ...[
-            SizedBox(height: isSmallScreen ? 8 : 12),
+            SizedBox(height: isSmallScreen ? 8 : isTablet ? 16 : 12),
             Container(
-              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              padding: EdgeInsets.all(isSmallScreen ? 8 : isTablet ? 16 : 12),
               decoration: BoxDecoration(
                 color: Colors.amber.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                 border: Border.all(color: Colors.amber),
               ),
               child: Row(
                 children: [
                   Icon(Icons.star,
-                      color: Colors.amber, size: isSmallScreen ? 16 : 18),
-                  SizedBox(width: isSmallScreen ? 6 : 8),
+                      color: Colors.amber, 
+                      size: isSmallScreen ? 16 : isTablet ? 24 : 18),
+                  SizedBox(width: isSmallScreen ? 6 : isTablet ? 12 : 8),
                   Expanded(
                     child: Text(
                       'Best Seller Kategori ${product['kategori']}',
                       style: TextStyle(
                         color: Colors.amber[800],
-                        fontSize: isSmallScreen ? 12 : 13,
+                        fontSize: isSmallScreen 
+                          ? 12 
+                          : isTablet 
+                            ? 18 
+                            : 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1042,6 +1039,9 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   }
 
   Widget _buildStats(BuildContext context, Map<String, dynamic> product) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
     return Row(
       children: [
         Expanded(
@@ -1080,11 +1080,14 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 6),
+      margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : isTablet ? 8 : 6),
       padding: EdgeInsets.symmetric(
-          vertical: isSmallScreen ? 8 : 12, horizontal: isSmallScreen ? 4 : 8),
+        vertical: isSmallScreen ? 8 : isTablet ? 16 : 12, 
+        horizontal: isSmallScreen ? 4 : isTablet ? 12 : 8
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1096,20 +1099,23 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Color(0xFF133E87), size: isSmallScreen ? 20 : 24),
-          SizedBox(height: isSmallScreen ? 4 : 8),
+          Icon(icon, 
+            color: Color(0xFF133E87), 
+            size: isSmallScreen ? 20 : isTablet ? 32 : 24
+          ),
+          SizedBox(height: isSmallScreen ? 4 : isTablet ? 12 : 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
+              fontSize: isSmallScreen ? 16 : isTablet ? 28 : 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: isSmallScreen ? 2 : 4),
+          SizedBox(height: isSmallScreen ? 2 : isTablet ? 8 : 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: isSmallScreen ? 10 : 12,
+              fontSize: isSmallScreen ? 10 : isTablet ? 18 : 12,
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
@@ -1123,12 +1129,13 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       BuildContext context, Map<String, dynamic> product) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(
           color: Colors.grey[300]!,
           width: 1,
@@ -1137,19 +1144,19 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: isSmallScreen ? 8 : 12),
+          SizedBox(height: isSmallScreen ? 8 : isTablet ? 16 : 12),
           _buildInfoRow(
             context,
             Icons.calendar_month_outlined,
             'Periode: ${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
           ),
-          SizedBox(height: isSmallScreen ? 6 : 8),
+          SizedBox(height: isSmallScreen ? 6 : isTablet ? 12 : 8),
           _buildInfoRow(
             context,
             Icons.attach_money,
             'Harga: Rp${NumberFormat('#,###').format(product['harga'] ?? 0)}',
           ),
-          SizedBox(height: isSmallScreen ? 6 : 8),
+          SizedBox(height: isSmallScreen ? 6 : isTablet ? 12 : 8),
           _buildInfoRow(
             context,
             Icons.category_outlined,
@@ -1163,21 +1170,22 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
   Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth > 600;
 
     return Row(
       children: [
         Icon(
           icon,
-          size: isSmallScreen ? 14 : 16,
+          size: isSmallScreen ? 14 : isTablet ? 24 : 16,
           color: Colors.grey[600],
         ),
-        SizedBox(width: isSmallScreen ? 6 : 8),
+        SizedBox(width: isSmallScreen ? 6 : isTablet ? 16 : 8),
         Flexible(
           child: Text(
             text,
             style: TextStyle(
               color: Colors.grey[800],
-              fontSize: isSmallScreen ? 12 : 14,
+              fontSize: isSmallScreen ? 12 : isTablet ? 20 : 14,
             ),
             overflow: TextOverflow.ellipsis,
           ),
