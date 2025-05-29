@@ -112,13 +112,14 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
+    final bool isTablet = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios,
-              color: Colors.white, size: screenWidth * 0.06),
+              color: Colors.white, size: isTablet ? screenWidth * 0.03 : screenWidth * 0.06),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -126,14 +127,14 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: screenWidth * 0.045,
+            fontSize: isTablet ? screenWidth * 0.025 : screenWidth * 0.045,
           ),
         ),
         backgroundColor: Color(0xFF133E87),
         elevation: 0,
       ),
       body: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.04),
+        padding: EdgeInsets.all(isTablet ? screenWidth * 0.03 : screenWidth * 0.04),
         child: Column(
           children: [
             Row(
@@ -147,9 +148,10 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                       fetchTransactions();
                     },
                     context,
+                    isTablet: isTablet,
                   ),
                 ),
-                SizedBox(width: screenWidth * 0.03),
+                SizedBox(width: isTablet ? screenWidth * 0.02 : screenWidth * 0.03),
                 Expanded(
                   child: _buildDropdown(
                     selectedYear.toString(),
@@ -159,11 +161,12 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                       fetchTransactions();
                     },
                     context,
+                    isTablet: isTablet,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: screenHeight * 0.02),
+            SizedBox(height: isTablet ? screenHeight * 0.01 : screenHeight * 0.02),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refreshTransactions,
@@ -173,15 +176,17 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                         ? Center(
                             child: Text(
                               'Tidak ada transaksi non-tunai pada periode ini',
-                              style: TextStyle(fontSize: screenWidth * 0.04),
+                              style: TextStyle(
+                                fontSize: isTablet ? screenWidth * 0.02 : screenWidth * 0.04,
+                              ),
                             ),
                           )
                         : ListView.builder(
-                            padding: EdgeInsets.all(screenWidth * 0.03),
+                            padding: EdgeInsets.all(isTablet ? screenWidth * 0.02 : screenWidth * 0.03),
                             itemCount: transactions.length,
                             itemBuilder: (context, index) {
                               return _buildTransactionCard(
-                                  transactions[index], context);
+                                  transactions[index], context, isTablet: isTablet);
                             },
                           ),
               ),
@@ -196,28 +201,33 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
     await fetchTransactions();
   }
 
-  Widget _buildDropdown(String value, List<String> items,
-      ValueChanged<String?> onChanged, BuildContext context) {
+  Widget _buildDropdown(
+    String value,
+    List<String> items,
+    ValueChanged<String?> onChanged,
+    BuildContext context, {
+    required bool isTablet,
+  }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.04,
-        vertical: screenHeight * 0.005,
+        horizontal: isTablet ? screenWidth * 0.03 : screenWidth * 0.04,
+        vertical: isTablet ? screenHeight * 0.003 : screenHeight * 0.005,
       ),
       decoration: BoxDecoration(
         color: Color(0xFF133E87),
-        borderRadius: BorderRadius.circular(screenWidth * 0.03),
+        borderRadius: BorderRadius.circular(isTablet ? screenWidth * 0.02 : screenWidth * 0.03),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           icon: Icon(Icons.keyboard_arrow_down,
-              color: Colors.white, size: screenWidth * 0.06),
+              color: Colors.white, size: isTablet ? screenWidth * 0.04 : screenWidth * 0.06),
           style: TextStyle(
             color: Colors.white,
-            fontSize: screenWidth * 0.04,
+            fontSize: isTablet ? screenWidth * 0.025 : screenWidth * 0.04,
           ),
           dropdownColor: Color(0xFF133E87),
           items: items.map((String item) {
@@ -227,7 +237,7 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                   item,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: screenWidth * 0.04,
+                    fontSize: isTablet ? screenWidth * 0.025 : screenWidth * 0.04,
                   ),
                 ));
           }).toList(),
@@ -239,7 +249,8 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
   }
 
   Widget _buildTransactionCard(
-      Map<String, dynamic> transaction, BuildContext context) {
+      Map<String, dynamic> transaction, BuildContext context,
+      {required bool isTablet}) {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
@@ -269,7 +280,7 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
     // Define text style for info items (date, QRIS, amount)
     TextStyle infoTextStyle = TextStyle(
       color: Colors.black87,
-      fontSize: screenWidth * 0.035,
+      fontSize: isTablet ? screenWidth * 0.02 : screenWidth * 0.035,
     );
 
     return GestureDetector(
@@ -284,13 +295,12 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
       },
       child: Card(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(screenWidth * 0.05),
-          side:
-              BorderSide(color: Color(0xFFE0E0E0), width: screenWidth * 0.002),
+          borderRadius: BorderRadius.circular(isTablet ? screenWidth * 0.03 : screenWidth * 0.05),
+          side: BorderSide(color: Color(0xFFE0E0E0)),
         ),
         elevation: 4,
         shadowColor: Colors.black26,
-        margin: EdgeInsets.only(bottom: screenHeight * 0.02),
+        margin: EdgeInsets.only(bottom: isTablet ? screenHeight * 0.015 : screenHeight * 0.02),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -298,10 +308,10 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius: BorderRadius.circular(screenWidth * 0.05),
+            borderRadius: BorderRadius.circular(isTablet ? screenWidth * 0.03 : screenWidth * 0.05),
           ),
           child: Padding(
-            padding: EdgeInsets.all(screenWidth * 0.04),
+            padding: EdgeInsets.all(isTablet ? screenWidth * 0.03 : screenWidth * 0.04),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -313,7 +323,7 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                         transactionId,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: screenWidth * 0.04,
+                          fontSize: isTablet ? screenWidth * 0.025 : screenWidth * 0.04,
                           color: Color(0xFF133E87),
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -321,72 +331,72 @@ class _TransaksiNonTunaiScreenState extends State<TransaksiNonTunaiScreen> {
                     ),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.02,
-                        vertical: screenHeight * 0.005,
+                        horizontal: isTablet ? screenWidth * 0.01 : screenWidth * 0.02,
+                        vertical: isTablet ? screenHeight * 0.003 : screenHeight * 0.005,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(screenWidth * 0.01),
+                        borderRadius: BorderRadius.circular(isTablet ? screenWidth * 0.008 : screenWidth * 0.01),
                       ),
                       child: Text(
                         status,
                         style: TextStyle(
                           color: statusColor,
-                          fontSize: screenWidth * 0.03,
+                          fontSize: isTablet ? screenWidth * 0.018 : screenWidth * 0.03,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: screenHeight * 0.015),
+                SizedBox(height: isTablet ? screenHeight * 0.01 : screenHeight * 0.015),
                 Divider(
                     color: Colors.grey.shade300, height: screenHeight * 0.002),
-                SizedBox(height: screenHeight * 0.015),
+                SizedBox(height: isTablet ? screenHeight * 0.01 : screenHeight * 0.015),
 
                 // Date
                 Row(
                   children: [
                     Icon(
                       Icons.calendar_today,
-                      size: screenWidth * 0.045,
+                      size: isTablet ? screenWidth * 0.03 : screenWidth * 0.045,
                       color: Color(0xFF133E87),
                     ),
-                    SizedBox(width: screenWidth * 0.02),
+                    SizedBox(width: isTablet ? screenWidth * 0.015 : screenWidth * 0.02),
                     Text(
                       formattedDate,
                       style: infoTextStyle,
                     ),
                   ],
                 ),
-                SizedBox(height: screenHeight * 0.01),
+                SizedBox(height: isTablet ? screenHeight * 0.007 : screenHeight * 0.01),
 
                 // Payment method
                 Row(
                   children: [
                     Icon(
                       Icons.account_balance_wallet,
-                      size: screenWidth * 0.045,
+                      size: isTablet ? screenWidth * 0.03 : screenWidth * 0.045,
                       color: Color(0xFF133E87),
                     ),
-                    SizedBox(width: screenWidth * 0.02),
+                    SizedBox(width: isTablet ? screenWidth * 0.015 : screenWidth * 0.02),
                     Text(
                       'QRIS',
                       style: infoTextStyle,
                     ),
                   ],
                 ),
-                SizedBox(height: screenHeight * 0.01),
+                SizedBox(height: isTablet ? screenHeight * 0.007 : screenHeight * 0.01),
 
                 // Amount
                 Row(
                   children: [
                     Icon(
                       Icons.attach_money,
-                      size: screenWidth * 0.045,
+                      size: isTablet ? screenWidth * 0.03 : screenWidth * 0.045,
                       color: Color(0xFF133E87),
                     ),
-                    SizedBox(width: screenWidth * 0.02),
+                    SizedBox(width: isTablet ? screenWidth * 0.015 : screenWidth * 0.02),
                     Text(
                       formattedAmount,
                       style: infoTextStyle,
