@@ -1040,6 +1040,7 @@ class _ProdukTerjualScreenState extends State<ProdukTerjualScreen> {
 
   Widget _buildStats(BuildContext context, Map<String, dynamic> product) {
     final screenWidth = MediaQuery.of(context).size.width;
+    // ignore: unused_local_variable
     final isTablet = screenWidth > 600;
 
     return Row(
