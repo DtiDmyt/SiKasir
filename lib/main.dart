@@ -1,10 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'login.dart';
 import 'dashboard.dart';
 import 'firebase_options.dart';
+import 'providers/counter_provider.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,15 +28,26 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Si Kasir',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF133E87),
-        fontFamily: 'Poppins', // Assuming you'll add this font
+    // Wrap the entire app with ChangeNotifierProvider for state management
+    return ChangeNotifierProvider(
+      create: (context) => CounterProvider(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Si Kasir - Provider Learning',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: const Color(0xFF133E87),
+          fontFamily: 'Poppins', // Assuming you'll add this font
+        ),
+        // Add routes untuk navigasi ke berbagai screen
+        routes: {
+          '/': (context) => SplashScreen(checkLoginStatus: _checkLoginStatus),
+          '/provider-learning': (context) => const HomeScreen(),
+          '/dashboard': (context) => DashboardScreen(),
+          '/login': (context) => LoginScreen(),
+        },
+        home: SplashScreen(checkLoginStatus: _checkLoginStatus),
       ),
-      home: SplashScreen(checkLoginStatus: _checkLoginStatus),
     );
   }
 }
@@ -133,6 +147,19 @@ class _SplashScreenState extends State<SplashScreen>
       animation: _backgroundController,
       builder: (context, child) {
         return Scaffold(
+          // Add floating action button untuk akses cepat ke Provider learning
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.pushNamed(context, '/provider-learning');
+            },
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF133E87),
+            icon: const Icon(Icons.school),
+            label: const Text(
+              'Provider Learning',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
           body: Container(
             color: _backgroundColorAnimation.value,
             child: Stack(
